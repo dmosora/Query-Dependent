@@ -1,1 +1,17 @@
-dsheets4: Testing write access.
+The assignment has been configured using CMake.  To generate the project simply execute CMake on the HW1 directory. It is recommended that you create a build directory to generate the solution or makefiles in order to keep the source code cleaner.
+
+Pre-requisites include Qt 4.6.2 or higher and CMake 2.6 or higher.  The University servers have all these installed already.
+
+      On Linux, a build may be done by:
+      $> cd Query-Dependent
+      $> mkdir build
+      $> cd build
+      $> cmake ../
+      $> make
+      $> ./src/Visualization/Visualization
+
+   On Windows, or with the GUI version of CMake on any platform, perform the following:
+   1.)    Where is the source code: <path-to-Query-Dependent>/Query-Dependent
+   2.) Where to build the binaries: <path-to-Query-Dependent>/Query-Dependent/build
+   3.) Click the Configure button
+   4.) Click the Generate button
