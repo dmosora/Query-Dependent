@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="/Visualization">
+    <file>images/main_icon.png</file>
+    <file>images/file_new.png</file>
+    <file>images/file_open.png</file>
+    <file>images/file_save.png</file>
+  </qresource>
+</RCC>
