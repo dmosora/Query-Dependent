@@ -19,6 +19,7 @@ SET(VISUALIZATION_SRC
    TableEditor.cpp
    Chart.cpp
    Chart_ParallelCoordinates.cpp
+   MapWidget.cpp
    )
 
 # Only add headers that are for Qt.
@@ -28,6 +29,7 @@ SET(VISUALIZATION_HDR
    TableEditor.h
    Chart.h
    Chart_ParallelCoordinates.h
+   MapWidget.h
    ) 
 
 SET(VISUALIZATION_FRM
