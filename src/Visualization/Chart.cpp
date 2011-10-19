@@ -1,5 +1,20 @@
 // Written by David Sheets
+// Visualization product for analyzing data, flight data in particular.
+// Copyright (C) 2011  David Sheets (dsheets4@kent.edu)
 //
+// Visualization is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #include <iostream>
 #include <climits>
 
@@ -73,7 +88,7 @@ void Chart::paintEvent( QPaintEvent* evtPaint )
 		glyphStats.push_back(stat);
 		QSqlDatabase db = QSqlDatabase::database( m_sConnectionName );
 		QSqlQuery q(db);
-		QString sQuery = "SELECT OriginNumeric,ManufacturerNumeric,Horsepower,Displacement,Cylinders,Acceleration,Weight,MPG,Model_year from " + m_sDataName + " ORDER BY ManufacturerNumeric";
+		QString sQuery = "SELECT * from " + m_sDataName;
 		if( !q.exec(sQuery) )
 		{
 			QSqlError err = q.lastError();
@@ -85,11 +100,15 @@ void Chart::paintEvent( QPaintEvent* evtPaint )
 		// information should come through another means that abstracts 
 		// the database in the system.
 		DbData data;
+      for( int i = 0; i < 10 && q.size() > (i+9) ; ++i )
+      {
+         q.next();
+      }
 		while( q.next() )
 		{
 			QSqlRecord rec = q.record();
 			double division = 360.0 / rec.count();
-			for( int i = 0; i < rec.count(); ++i )
+			for( int i = 0; i < rec.count() && i < glyphStats.size(); ++i )
 			{
 				QSqlField field = rec.field(i);
 				
@@ -312,4 +331,10 @@ void Chart::SetChartView(ViewType view)
 {
 	m_eView = view;
 	update();
+}
+
+
+QSize Chart::sizeHint() const
+{
+   return QSize(100,100);
 }

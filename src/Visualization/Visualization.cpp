@@ -1,4 +1,19 @@
 // Written by David Sheets
+// Visualization product for analyzing data, flight data in particular.
+// Copyright (C) 2011  David Sheets (dsheets4@kent.edu)
+//
+// Visualization is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 
@@ -7,6 +22,7 @@
 #include <QMessageBox>
 #include <QLabel>
 #include <QProgressBar>
+#include <QMdiSubWindow>
 
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -43,6 +59,7 @@ Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
 	connect
       ( &m_csvParser, SIGNAL(fileDone(bool,QString))
       , this,         SLOT(CsvFileStatus(bool,QString)) );
+
 }
 
 Visualization::~Visualization()
@@ -110,14 +127,23 @@ void Visualization::LoadFile()
 void Visualization::CsvFileDone()
 {
 	// ---------------------------------------------------------------------------
+   // Connect the Table View for the data.
 	connect( ui.actionTable, SIGNAL(triggered()), this, SLOT(OnViewTable()) );
+	// ---------------------------------------------------------------------------
+   
+	// ---------------------------------------------------------------------------
+   // Setup the attributes tree.
 	// ---------------------------------------------------------------------------
 
 	// ---------------------------------------------------------------------------
-	//m_chart = new Chart(sConnectionName, sDataSetName);
-	//ui.centralWidget->layout()->addWidget(m_chart);
-	//m_chart->update();
-	//
+   // Example widget appearing in the main window as a sub-window of the 
+   // visualization
+   m_chart = new Chart(sConnectionName, sDataSetName);
+   m_chart->setObjectName(QString::fromUtf8("chart"));
+   m_chart->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
+   QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_chart);
+   subwindow->showMaximized();
+	
 	//connect( ui.actionBoth,         SIGNAL(triggered()), this, SLOT(SetBoth()) );
 	//connect( ui.actionTime,         SIGNAL(triggered()), this, SLOT(SetTime()) );
 	//connect( ui.actionManufacturer, SIGNAL(triggered()), this, SLOT(SetManufacturer()) );
