@@ -44,7 +44,9 @@ using namespace std;
 Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
 	, m_chart(NULL)
-   , m_progress(NULL)
+        , m_progress(NULL)
+        , _map()
+
 {
 	ui.setupUi(this);
 
@@ -122,6 +124,8 @@ void Visualization::LoadFile()
 
 		m_csvParser.start();
 	}
+
+        createVisualizationUI();
 }
 
 void Visualization::CsvFileDone()
@@ -193,4 +197,9 @@ void Visualization::OnViewTable()
 	TableEditor editor(sConnectionName, sDataSetName);
 	editor.show();
 	editor.exec();
+}
+
+void Visualization::createVisualizationUI()
+{
+    // Create a new mapwidget with the data we need for it and show it
 }

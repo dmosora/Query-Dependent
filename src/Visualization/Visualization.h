@@ -8,6 +8,7 @@
 #include "ui_Visualization.h"
 
 #include "CsvParser.h"
+#include "MapWidget.h"
 
 class Chart;
 
@@ -53,6 +54,7 @@ public:
 
 protected:
 	void closeEvent( QCloseEvent* event );
+        void createVisualizationUI();
 
 protected slots:
 	void LoadFile();
@@ -71,7 +73,9 @@ private:
 
 	CsvParser     m_csvParser;
 	Chart*        m_chart;
-   QProgressBar* m_progress;
+        QProgressBar* m_progress;
+        MapWidget*    _map;
+
 };
 
 #endif // VISUALIZATION_H
