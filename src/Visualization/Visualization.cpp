@@ -124,8 +124,6 @@ void Visualization::LoadFile()
 
 		m_csvParser.start();
 	}
-
-        createVisualizationUI();
 }
 
 void Visualization::CsvFileDone()
@@ -142,17 +140,37 @@ void Visualization::CsvFileDone()
 	// ---------------------------------------------------------------------------
    // Example widget appearing in the main window as a sub-window of the 
    // visualization
-   m_chart = new Chart(sConnectionName, sDataSetName);
-   m_chart->setObjectName(QString::fromUtf8("chart"));
-   m_chart->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
-   QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_chart);
-   subwindow->showMaximized();
-	
+   createVisualizationUI();
+
 	//connect( ui.actionBoth,         SIGNAL(triggered()), this, SLOT(SetBoth()) );
 	//connect( ui.actionTime,         SIGNAL(triggered()), this, SLOT(SetTime()) );
 	//connect( ui.actionManufacturer, SIGNAL(triggered()), this, SLOT(SetManufacturer()) );
 	//connect( ui.actionNone,         SIGNAL(triggered()), this, SLOT(SetNone()) );
 	// ---------------------------------------------------------------------------
+}
+
+// This function is where we should set up the widgets we will use.
+void Visualization::createVisualizationUI()
+{
+    m_chart = new Chart(sConnectionName, sDataSetName);
+    m_chart->setObjectName(QString::fromUtf8("chart"));
+    m_chart->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
+    _subwindow = ui.mdiArea->addSubWindow(m_chart);
+
+    _attributes = new QDockWidget(tr("Attributes"), this);
+    // _attributes->setWidget(); // Needs this line once we have the widget for it
+    _attributes->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    addDockWidget(Qt::RightDockWidgetArea, _attributes);
+    _attributes->setMinimumWidth(200);
+
+    _map = new MapWidget(this);
+    _mapsubwindow = ui.mdiArea->addSubWindow(_map);
+    _mapsubwindow->resize(400,300);
+    _mapsubwindow->show();
+
+    //subwindow->resize(400,300);
+    //subwindow->show();
+    //subwindow->showMaximized();
 }
 
 void Visualization::CsvFileStatus(bool bSuccess, QString sFilename)
@@ -197,9 +215,4 @@ void Visualization::OnViewTable()
 	TableEditor editor(sConnectionName, sDataSetName);
 	editor.show();
 	editor.exec();
-}
-
-void Visualization::createVisualizationUI()
-{
-    // Create a new mapwidget with the data we need for it and show it
 }

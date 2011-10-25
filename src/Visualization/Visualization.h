@@ -5,6 +5,7 @@
 
 #include <QtGui/QMainWindow>
 #include <QProgressBar>
+#include <QDockWidget>
 #include "ui_Visualization.h"
 
 #include "CsvParser.h"
@@ -71,10 +72,15 @@ protected slots:
 private:
 	Ui::VisualizationClass ui;
 
-	CsvParser     m_csvParser;
-	Chart*        m_chart;
-        QProgressBar* m_progress;
-        MapWidget*    _map;
+        // UI elements for easier access
+        QDockWidget*    _attributes;
+        MapWidget*      _map;
+        QMdiSubWindow*  _subwindow;
+        QMdiSubWindow*  _mapsubwindow;
+
+        CsvParser       m_csvParser;
+        Chart*          m_chart;
+        QProgressBar*   m_progress;
 
 };
 
