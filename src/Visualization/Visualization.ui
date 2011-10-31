@@ -68,17 +68,8 @@
     <property name="title">
      <string>View</string>
     </property>
-    <widget class="QMenu" name="menuParallel_Coordinates">
-     <property name="title">
-      <string>Parallel Coordinates</string>
-     </property>
-     <addaction name="actionNone"/>
-     <addaction name="actionBoth"/>
-     <addaction name="actionTime"/>
-     <addaction name="actionManufacturer"/>
-    </widget>
-    <addaction name="menuParallel_Coordinates"/>
     <addaction name="separator"/>
+    <addaction name="actionParallel_Coordinates"/>
     <addaction name="actionTable"/>
    </widget>
    <addaction name="menuFile"/>
@@ -167,6 +158,11 @@
   <action name="actionTable">
    <property name="text">
     <string>Table</string>
+   </property>
+  </action>
+  <action name="actionParallel_Coordinates">
+   <property name="text">
+    <string>Parallel Coordinates</string>
    </property>
   </action>
  </widget>

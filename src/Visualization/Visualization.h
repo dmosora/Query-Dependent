@@ -8,43 +8,57 @@
 #include <QDockWidget>
 #include "ui_Visualization.h"
 
+#include "DataMgmt.h"
+#include "DataSelections.h"
 #include "CsvParser.h"
+#include "DockWidgetAttributes.h"
 #include "MapWidget.h"
 
-class Chart;
 
-// ============================================================================
+// Forward declarations.
+namespace Chart
+{
+    class ParallelCoordinates;
+};
+
+
+class TableEditor;
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Threading test code
 #include <iostream>
 class MyObject : public QObject
 {
-    Q_OBJECT
-public slots:
-    void MySlot( int increment )
-    {
-        std::cout << "slot called " << increment << std::endl;
-    }
+	Q_OBJECT
+		public slots:
+			void MySlot( int increment )
+			{
+				std::cout << "slot called " << increment << std::endl;
+			}
 };
 
 class CThread1 : public QThread
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    void run( void )
-    {
-        std::cout << "thread 1 started" << std::endl;
-        int i = 0;
-        while(1)
-        {
-           msleep( 2000 );
-           emit MySignal(i++);
-        }
-    }
+	void run( void )
+	{
+		std::cout << "thread 1 started" << std::endl;
+		int i = 0;
+		while(1)
+		{
+			msleep( 2000 );
+			emit MySignal(i++);
+		}
+	}
 signals:
-    void MySignal( int increment );
+	void MySignal( int increment );
 };
-// ============================================================================
+// End threading test code.
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-
+//! Represents the Main Window of the Information Visualization application.
 class Visualization : public QMainWindow
 {
 	Q_OBJECT
@@ -55,33 +69,38 @@ public:
 
 protected:
 	void closeEvent( QCloseEvent* event );
-        void createVisualizationUI();
+    void createVisualizationUI();
 
 protected slots:
 	void LoadFile();
 	void CsvFileStatus(bool bSuccess, QString sFilename);
 	void CsvFileDone();
 
-	void SetTime();
-	void SetManufacturer();
-	void SetBoth();
-	void SetNone();
 
+	//! Slot that opens the database table view.
 	void OnViewTable();
 
+   //! Slot that opens a new parallel coordinates.
+   void OnViewParallelCoordinates();
+
 private:
-	Ui::VisualizationClass ui;
+	Ui::VisualizationClass ui;  //!< Qt generated from the .ui file from Designer
 
-        // UI elements for easier access
-        QDockWidget*    _attributes;
-        MapWidget*      _map;
-        QMdiSubWindow*  _subwindow;
-        QMdiSubWindow*  _mapsubwindow;
+    // UI elements for easier access
+    QDockWidget*    _attributes;
+    MapWidget*      _map;
+    QMdiSubWindow*  _subwindow;
+    QMdiSubWindow*  _mapsubwindow;
 
-        CsvParser       m_csvParser;
-        Chart*          m_chart;
-        QProgressBar*   m_progress;
+	CsvParser       m_csvParser; //!< Class to parse CSV files
+	DataMgmt        m_dataMgmt;  //!< Abstraction of the data management
+	QProgressBar   *m_progress;  //!< Progress bar displayed in the status bar
+	DataSelections  m_attrSel;   //!< User selected data.
+	
+	DockWidgetAttributes m_dockWidgetAttr; //!< The attribute dock widget.
 
+	Chart::ParallelCoordinates *m_viewPC;    //!< Graphical depiction of the data
+    TableEditor                *m_viewTable; //!< Database editing view.
 };
 
 #endif // VISUALIZATION_H

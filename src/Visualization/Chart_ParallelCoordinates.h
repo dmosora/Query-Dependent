@@ -14,30 +14,55 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 #ifndef _CHART_PARALLELCOORDINATES_H_
 #define _CHART_PARALLELCOORDINATES_H_
 
 #include <QWidget>
 
+#include "DataSelections.h"
+
+
 namespace Chart
 {
+   //! Simple structure for storing statistics calculated for an
+   //! attribute.
+   struct Stats
+   {
+      double min;
+      double max;
+      double range;
+   };
+
+
    class ParallelCoordinates : public QWidget
    {
       Q_OBJECT
 
-      public:
+   public:
 
-         ParallelCoordinates(QWidget *parent = 0);
+      ParallelCoordinates(
+         const QString& sConnectionName,
+         const QString& sDataName,
+         DataSelections* selections,
+         QWidget *parent = 0 );
 
-         virtual ~ParallelCoordinates();
+      virtual ~ParallelCoordinates();
 
 
-         void draw();
+      void draw();
 
 
-      protected:
-         void paintEvent(QPaintEvent* event);
+   protected:
+      void paintEvent(QPaintEvent* event);
+
+
+      QString         m_sConnectionName; //!< Name of the database connection
+      QString         m_sDataName;       //!< Name of the table containing the data
+      DataSelections* m_selections;      //!< User selected parameters.
+      
+      //! @todo Combine these into one structure.
+      QList<Stats> m_attrStats;
+      QList<QList<double> > m_chartData; //!< Processes chart data.
    };
 };
 

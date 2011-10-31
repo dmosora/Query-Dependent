@@ -17,9 +17,11 @@ SET(VISUALIZATION_SRC
    Visualization.cpp
    CsvParser.cpp
    TableEditor.cpp
-   Chart.cpp
    Chart_ParallelCoordinates.cpp
    MapWidget.cpp
+   DataMgmt.cpp
+   DataSelections.cpp
+   DockWidgetAttributes.cpp
    )
 
 # Only add headers that are for Qt.
@@ -27,13 +29,14 @@ SET(VISUALIZATION_HDR
    Visualization.h
    CsvParser.h
    TableEditor.h
-   Chart.h
    Chart_ParallelCoordinates.h
+   DockWidgetAttributes.h
    MapWidget.h
    ) 
 
 SET(VISUALIZATION_FRM
    Visualization.ui
+   DockWidgetAttributes.ui
    )
 
 SET(VISUALIZATION_RES

@@ -28,14 +28,13 @@
 #include <QSqlError>
 
 #include "TableEditor.h"
-#include "Chart.h"
+#include "Chart_ParallelCoordinates.h"
 #include "Visualization.h"
 
 
 const QString sDataSetName    = "DataName";    //! @todo Calculate the database name
 const QString sConnectionName = "DataName.db"; //! @todo Calculate the connection name
 
-Chart* chart = NULL;
 
 using namespace std;
 
@@ -43,25 +42,32 @@ using namespace std;
 
 Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
-	, m_chart(NULL)
-        , m_progress(NULL)
-        , _map()
-
+    , _map()
+    , m_progress(NULL)
+    , m_viewPC(NULL)
+    , m_viewTable(NULL)
 {
 	ui.setupUi(this);
 
-   // -------------------------------------------------------------------------
-   // Basic application function connections
+	this->addDockWidget(Qt::LeftDockWidgetArea, &m_dockWidgetAttr);
+
+	// -------------------------------------------------------------------------
+	// Basic application function connections
 	connect( ui.actionExit, SIGNAL(triggered()), this, SLOT(close()) );
 	connect( ui.actionOpen, SIGNAL(triggered()), this, SLOT(LoadFile()) );
+	// -------------------------------------------------------------------------
+
+	// -------------------------------------------------------------------------
+	// CSV Parser connections
+	connect( &m_csvParser, SIGNAL(finished()),   this, SLOT(CsvFileDone()) );
+	// -------------------------------------------------------------------------
 
    // -------------------------------------------------------------------------
-   // CSV Parser connections
-	connect( &m_csvParser, SIGNAL(finished()),     this, SLOT(CsvFileDone()) );
-	connect
-      ( &m_csvParser, SIGNAL(fileDone(bool,QString))
-      , this,         SLOT(CsvFileStatus(bool,QString)) );
-
+   // Visualization connections
+   connect
+      ( ui.actionParallel_Coordinates, SIGNAL(triggered())
+      , this,                          SLOT(OnViewParallelCoordinates()) );
+   // -------------------------------------------------------------------------
 }
 
 Visualization::~Visualization()
@@ -76,51 +82,44 @@ void Visualization::closeEvent( QCloseEvent* event )
 
 void Visualization::LoadFile()
 {
+	// If a file is currently being parsed then indicate that the user must 
+	// wait for it to finish.
 	if( m_csvParser.isRunning() )
 	{
 		QMessageBox message;
-		message.setText("The previously selected file is still loading!"
-                      "Please wait for it to complete.");
+		message.setText(tr("The previously selected file is still loading!"
+			"Please wait for it to complete."));
 		message.exec();
 
 		return;
 	}
 
+	// Create a file open dialog and prompt the user for a file.
 	QString sFilename = QFileDialog::getOpenFileName(this,
 		tr("Open CSV"), "", tr("CSV Files (*.csv)") );
 
+	// If a file was selected then create a database for the 
 	if( !sFilename.isEmpty() )
 	{
-		QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", sConnectionName);
-		db.setDatabaseName(sConnectionName);
-		if (!db.open())
-		{
-			cerr << "Failed to open the flight database for connection: " 
-				  << qPrintable(sDataSetName) << endl;
-			cerr << "Error Message: " << qPrintable(db.lastError().text()) << endl;
+		QFile file;
+		m_dataMgmt.Connect( sConnectionName, sDataSetName );
+		m_csvParser.SetParseInformation( sFilename, &m_dataMgmt, sDataSetName, sConnectionName );
 
-			return;
+		if( !m_progress )
+		{
+			QLabel* label = new QLabel(tr("Loading ") + sDataSetName);
+			m_progress = new QProgressBar();
+			ui.statusBar->addWidget(label);
+			ui.statusBar->addWidget(m_progress);
 		}
 
-
-		QFile file;
-		m_csvParser.SetParseInformation( sFilename, sDataSetName, sConnectionName );
-		
-      if( !m_progress )
-      {
-		   QLabel* label = new QLabel("Loading " + sDataSetName);
-		   m_progress = new QProgressBar();
-		   ui.statusBar->addWidget(label);
-		   ui.statusBar->addWidget(m_progress);
-      }
-      
-      // Connect the progress bar to the status updates from the CSV parsing thread.
-	   connect
-         ( &m_csvParser, SIGNAL(setRange(int,int))
-         , m_progress,   SLOT(setRange(int,int)) );
-	   connect
-         ( &m_csvParser, SIGNAL(setValue(int))
-         , m_progress,   SLOT(setValue(int)) );
+		// Connect the progress bar to the status updates from the CSV parsing thread.
+		connect
+			( &m_csvParser,      SIGNAL(setProgressRange(int,int))
+			, m_progress,        SLOT(setRange(int,int)) );
+		connect
+			( &m_csvParser,      SIGNAL(setCurrentProgress(int))
+			, m_progress,        SLOT(setValue(int)) );
 
 		m_csvParser.start();
 	}
@@ -128,8 +127,15 @@ void Visualization::LoadFile()
 
 void Visualization::CsvFileDone()
 {
-	// ---------------------------------------------------------------------------
-   // Connect the Table View for the data.
+	// -------------------------------------------------------------------------
+	// Setup the attributes tree.
+	// -------------------------------------------------------------------------
+	m_dockWidgetAttr.PopulateTree(&m_dataMgmt, sDataSetName);
+   m_dockWidgetAttr.SetModel( &m_attrSel );
+	// -------------------------------------------------------------------------
+
+	// -------------------------------------------------------------------------
+	// Connect the Table View for the data.
 	connect( ui.actionTable, SIGNAL(triggered()), this, SLOT(OnViewTable()) );
 	// ---------------------------------------------------------------------------
    
@@ -152,11 +158,6 @@ void Visualization::CsvFileDone()
 // This function is where we should set up the widgets we will use.
 void Visualization::createVisualizationUI()
 {
-    m_chart = new Chart(sConnectionName, sDataSetName);
-    m_chart->setObjectName(QString::fromUtf8("chart"));
-    m_chart->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
-    _subwindow = ui.mdiArea->addSubWindow(m_chart);
-
     _attributes = new QDockWidget(tr("Attributes"), this);
     // _attributes->setWidget(); // Needs this line once we have the widget for it
     _attributes->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -175,44 +176,31 @@ void Visualization::createVisualizationUI()
 
 void Visualization::CsvFileStatus(bool bSuccess, QString sFilename)
 {
-   int tmpBrk = 1;
-}
-
-void Visualization::SetTime()
-{
-	if( m_chart )
-	{
-		m_chart->SetChartView(Time);
-	}
-}
-
-void Visualization::SetManufacturer()
-{
-	if( m_chart )
-	{
-		m_chart->SetChartView(Manufacturer);
-	}
-}
-
-void Visualization::SetBoth()
-{
-	if( m_chart )
-	{
-		m_chart->SetChartView(Both);
-	}
-}
-
-void Visualization::SetNone()
-{
-	if( m_chart )
-	{
-		m_chart->SetChartView(None);
-	}
+	int tmpBrk = 1;
 }
 
 void Visualization::OnViewTable()
 {
-	TableEditor editor(sConnectionName, sDataSetName);
-	editor.show();
-	editor.exec();
+   //! @todo This might be a memory leak.  Determine the DeleteOnClose 
+   //!       property.  In the long run, this code will need redone to 
+   //!       connect the chart(s) up to dynamically updates based on 
+   //!       user selections.
+	m_viewTable = new TableEditor(sConnectionName, sDataSetName);
+	m_viewTable->setObjectName(QString::fromUtf8("chart"));
+	m_viewTable->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
+	QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewTable);
+	subwindow->showMaximized();
+}
+
+
+void Visualization::OnViewParallelCoordinates()
+{
+	// ---------------------------------------------------------------------------
+	// Widget appearing in the main window as a sub-window of the visualization
+	// ---------------------------------------------------------------------------
+	m_viewPC = new Chart::ParallelCoordinates(sConnectionName, sDataSetName, &m_attrSel);
+	m_viewPC->setObjectName(QString::fromUtf8("chart"));
+	m_viewPC->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
+	QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewPC);
+	subwindow->showMaximized();
 }

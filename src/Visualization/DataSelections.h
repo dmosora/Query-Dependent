@@ -14,40 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _CHART_H_
-#define _CHART_H_
+#ifndef _DATASELECTIONS_H_
+#define _DATASELECTIONS_H_
 
-#include <QWidget>
 
-enum ViewType
+#include "DataMgmt.h"
+
+
+//! Class to track the data selections for a particular purpose.  The
+//! long-term application of this class will be toward abstracting the 
+//! SQL access from the system.
+class DataSelections
 {
-	Manufacturer,
-	Time,
-	Both,
-	None
-};
-
-class Chart : public QWidget
-{
-	Q_OBJECT
-
 public:
 
-	Chart(const QString& sConnectionName, const QString& sDataName, QWidget *parent = 0);
-	virtual ~Chart();
+	DataSelections();
+	virtual ~DataSelections();
+	
+	void ClearSelections();
+	void SetSelection(const QString& name);
 
-	void draw();
+	const QStringList& GetSelectedAttributes();
 
-	void SetChartView(ViewType view);
-
-   virtual QSize sizeHint() const;
 	
  protected:
-     void paintEvent(QPaintEvent* event);
-
-	 QString  m_sConnectionName;
-	 QString  m_sDataName;
-	 ViewType m_eView;
+	QStringList m_selections;
 };
 
-#endif // _CHART_H_
+#endif // _DATASELECTIONS_H_

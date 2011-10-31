@@ -15,27 +15,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "Visualization.h"
-#include <QtGui/QApplication>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlRecord>
+#include <QSqlField>
+#include <QSqlError>
+
+#include "DataSelections.h"
 
 
-int main(int argc, char *argv[])
+DataSelections::DataSelections()
 {
-	QApplication a(argc, argv);
+}
 
-   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-   // Thread testing code.
-   //CThread1 oThread1;
-   //MyObject myObject;
-   //QObject::connect
-   //    ( & oThread1, SIGNAL( MySignal(int) )
-   //    , & myObject, SLOT( MySlot(int) ) );
-   //oThread1.start();
-   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+DataSelections::~DataSelections()
+{
+
+}
+
+void DataSelections::ClearSelections()
+{
+	m_selections.clear();
+}
 
 
+const QStringList& DataSelections::GetSelectedAttributes()
+{
+	return m_selections;
+}
 
-	Visualization w;
-	w.show();
-	return a.exec();
+void DataSelections::SetSelection(const QString& column)
+{
+	m_selections.push_back(column);
 }
