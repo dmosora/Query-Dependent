@@ -21,7 +21,7 @@
 
 int main(int argc, char *argv[])
 {
-	QApplication a(argc, argv);
+   QApplication a(argc, argv);
 
    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
    // Thread testing code.
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 
 
 
-	Visualization w;
-	w.show();
-	return a.exec();
+   Visualization w;
+   w.show();
+   return a.exec();
 }

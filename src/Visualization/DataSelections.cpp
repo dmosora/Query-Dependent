@@ -24,27 +24,30 @@
 #include "DataSelections.h"
 
 
-DataSelections::DataSelections()
+namespace Data
 {
-}
+   DataSelections::DataSelections()
+   {
+   }
 
-DataSelections::~DataSelections()
-{
+   DataSelections::~DataSelections()
+   {
 
-}
+   }
 
-void DataSelections::ClearSelections()
-{
-	m_selections.clear();
-}
+   void DataSelections::ClearSelections()
+   {
+      m_selections.clear();
+   }
 
 
-const QStringList& DataSelections::GetSelectedAttributes()
-{
-	return m_selections;
-}
+   const QStringList& DataSelections::GetSelectedAttributes()
+   {
+      return m_selections;
+   }
 
-void DataSelections::SetSelection(const QString& column)
-{
-	m_selections.push_back(column);
-}
+   void DataSelections::SetSelection(const QString& column)
+   {
+      m_selections.push_back(column);
+   }
+};

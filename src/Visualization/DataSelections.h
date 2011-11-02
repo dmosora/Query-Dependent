@@ -20,25 +20,59 @@
 
 #include "DataMgmt.h"
 
-
-//! Class to track the data selections for a particular purpose.  The
-//! long-term application of this class will be toward abstracting the 
-//! SQL access from the system.
-class DataSelections
+namespace Data
 {
-public:
+   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   //! Represents an n-dimensional point parametric with time.
+   struct Point
+   {
+      QList<QVariant>  _dataVector; //!< Represents all parameters.
+      long long        _time;       //!< Timestamp of the data vector
+   };
 
-	DataSelections();
-	virtual ~DataSelections();
-	
-	void ClearSelections();
-	void SetSelection(const QString& name);
+   //! Represents metadata associated with a Point.
+   struct Metadata
+   {
+      double      _min;         //!< Statistical min
+      double      _max;         //!< Statistical max
+      double      _range;       //!< Range between min and max
+      ColumnDef*  _definition;  //!< Definition for the attribute
+   };
 
-	const QStringList& GetSelectedAttributes();
+   // Combination of Points over time with their associated metadata.
+   struct Buffer
+   {
+      QList<Point>    _params;
+      QList<Metadata> _metadata;
+   };
+   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-	
- protected:
-	QStringList m_selections;
+   //! Class to track the data selections for a particular purpose.  The
+   //! long-term application of this class will be toward abstracting the 
+   //! SQL access from the system.
+   class DataSelections
+   {
+   public:
+
+      DataSelections();
+      virtual ~DataSelections();
+
+      //! Clears out the current selections.
+      void ClearSelections();
+
+      //! Adds an attribute to the selections.
+      //! @param name  Name of the attribute to add to the selection.
+      void SetSelection(const QString& name);
+
+      //! Gets the list of currently selected attributes.
+      //! @retval "Selections"  List of selected parameter names (computer name) 
+      const QStringList& GetSelectedAttributes();
+
+
+   protected:
+      QStringList m_selections;  //!< List of selected parameters.
+   };
+
 };
 
 #endif // _DATASELECTIONS_H_

@@ -41,26 +41,26 @@ using namespace std;
 
 
 Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
-	: QMainWindow(parent, flags)
-    , _map()
-    , m_progress(NULL)
-    , m_viewPC(NULL)
-    , m_viewTable(NULL)
+   : QMainWindow(parent, flags)
+   , _map()
+   , m_progress(NULL)
+   , m_viewPC(NULL)
+   , m_viewTable(NULL)
 {
-	ui.setupUi(this);
+   ui.setupUi(this);
 
-	this->addDockWidget(Qt::LeftDockWidgetArea, &m_dockWidgetAttr);
+   this->addDockWidget(Qt::LeftDockWidgetArea, &m_dockWidgetAttr);
 
-	// -------------------------------------------------------------------------
-	// Basic application function connections
-	connect( ui.actionExit, SIGNAL(triggered()), this, SLOT(close()) );
-	connect( ui.actionOpen, SIGNAL(triggered()), this, SLOT(LoadFile()) );
-	// -------------------------------------------------------------------------
+   // -------------------------------------------------------------------------
+   // Basic application function connections
+   connect( ui.actionExit, SIGNAL(triggered()), this, SLOT(close()) );
+   connect( ui.actionOpen, SIGNAL(triggered()), this, SLOT(LoadFile()) );
+   // -------------------------------------------------------------------------
 
-	// -------------------------------------------------------------------------
-	// CSV Parser connections
-	connect( &m_csvParser, SIGNAL(finished()),   this, SLOT(CsvFileDone()) );
-	// -------------------------------------------------------------------------
+   // -------------------------------------------------------------------------
+   // CSV Parser connections
+   connect( &m_csvParser, SIGNAL(finished()),   this, SLOT(CsvFileDone()) );
+   // -------------------------------------------------------------------------
 
    // -------------------------------------------------------------------------
    // Visualization connections
@@ -77,106 +77,96 @@ Visualization::~Visualization()
 
 void Visualization::closeEvent( QCloseEvent* event )
 {
-	m_csvParser.stopParse();
+   m_csvParser.stopParse();
 }
 
 void Visualization::LoadFile()
 {
-	// If a file is currently being parsed then indicate that the user must 
-	// wait for it to finish.
-	if( m_csvParser.isRunning() )
-	{
-		QMessageBox message;
-		message.setText(tr("The previously selected file is still loading!"
-			"Please wait for it to complete."));
-		message.exec();
+   // If a file is currently being parsed then indicate that the user must 
+   // wait for it to finish.
+   if( m_csvParser.isRunning() )
+   {
+      QMessageBox message;
+      message.setText(tr("The previously selected file is still loading!"
+         "Please wait for it to complete."));
+      message.exec();
 
-		return;
-	}
+      return;
+   }
 
-	// Create a file open dialog and prompt the user for a file.
-	QString sFilename = QFileDialog::getOpenFileName(this,
-		tr("Open CSV"), "", tr("CSV Files (*.csv)") );
+   // Create a file open dialog and prompt the user for a file.
+   QString sFilename = QFileDialog::getOpenFileName(this,
+      tr("Open CSV"), "", tr("CSV Files (*.csv)") );
 
-	// If a file was selected then create a database for the 
-	if( !sFilename.isEmpty() )
-	{
-		QFile file;
-		m_dataMgmt.Connect( sConnectionName, sDataSetName );
-		m_csvParser.SetParseInformation( sFilename, &m_dataMgmt, sDataSetName, sConnectionName );
+   // If a file was selected then create a database for the 
+   if( !sFilename.isEmpty() )
+   {
+      QFile file;
+      m_dataMgmt.Connect( sConnectionName, sDataSetName );
+      m_csvParser.SetParseInformation( sFilename, &m_dataMgmt, sDataSetName, sConnectionName );
 
-		if( !m_progress )
-		{
-			QLabel* label = new QLabel(tr("Loading ") + sDataSetName);
-			m_progress = new QProgressBar();
-			ui.statusBar->addWidget(label);
-			ui.statusBar->addWidget(m_progress);
-		}
+      if( !m_progress )
+      {
+         QLabel* label = new QLabel(tr("Loading ") + sDataSetName);
+         m_progress = new QProgressBar();
+         ui.statusBar->addWidget(label);
+         ui.statusBar->addWidget(m_progress);
+      }
 
-		// Connect the progress bar to the status updates from the CSV parsing thread.
-		connect
-			( &m_csvParser,      SIGNAL(setProgressRange(int,int))
-			, m_progress,        SLOT(setRange(int,int)) );
-		connect
-			( &m_csvParser,      SIGNAL(setCurrentProgress(int))
-			, m_progress,        SLOT(setValue(int)) );
+      // Connect the progress bar to the status updates from the CSV parsing thread.
+      connect
+         ( &m_csvParser,      SIGNAL(setProgressRange(int,int))
+         , m_progress,        SLOT(setRange(int,int)) );
+      connect
+         ( &m_csvParser,      SIGNAL(setCurrentProgress(int))
+         , m_progress,        SLOT(setValue(int)) );
 
-		m_csvParser.start();
-	}
+      m_csvParser.start();
+   }
 }
 
 void Visualization::CsvFileDone()
 {
-	// -------------------------------------------------------------------------
-	// Setup the attributes tree.
-	// -------------------------------------------------------------------------
-	m_dockWidgetAttr.PopulateTree(&m_dataMgmt, sDataSetName);
-   m_dockWidgetAttr.SetModel( &m_attrSel );
-	// -------------------------------------------------------------------------
-
-	// -------------------------------------------------------------------------
-	// Connect the Table View for the data.
-	connect( ui.actionTable, SIGNAL(triggered()), this, SLOT(OnViewTable()) );
-	// ---------------------------------------------------------------------------
-   
-	// ---------------------------------------------------------------------------
+   // -------------------------------------------------------------------------
    // Setup the attributes tree.
-	// ---------------------------------------------------------------------------
+   // -------------------------------------------------------------------------
+   m_dockWidgetAttr.PopulateTree(&m_dataMgmt, sDataSetName);
+   m_dockWidgetAttr.SetModel( &m_attrSel );
+   // -------------------------------------------------------------------------
 
-	// ---------------------------------------------------------------------------
+   // -------------------------------------------------------------------------
+   // Connect the Table View for the data.
+   connect( ui.actionTable, SIGNAL(triggered()), this, SLOT(OnViewTable()) );
+   // ---------------------------------------------------------------------------
+
+   // ---------------------------------------------------------------------------
+   // Setup the attributes tree.
+   // ---------------------------------------------------------------------------
+
+   // ---------------------------------------------------------------------------
    // Example widget appearing in the main window as a sub-window of the 
    // visualization
    createVisualizationUI();
 
-	//connect( ui.actionBoth,         SIGNAL(triggered()), this, SLOT(SetBoth()) );
-	//connect( ui.actionTime,         SIGNAL(triggered()), this, SLOT(SetTime()) );
-	//connect( ui.actionManufacturer, SIGNAL(triggered()), this, SLOT(SetManufacturer()) );
-	//connect( ui.actionNone,         SIGNAL(triggered()), this, SLOT(SetNone()) );
-	// ---------------------------------------------------------------------------
+   // ---------------------------------------------------------------------------
 }
 
 // This function is where we should set up the widgets we will use.
 void Visualization::createVisualizationUI()
 {
-    _attributes = new QDockWidget(tr("Attributes"), this);
-    // _attributes->setWidget(); // Needs this line once we have the widget for it
-    _attributes->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    addDockWidget(Qt::RightDockWidgetArea, _attributes);
-    _attributes->setMinimumWidth(200);
-
     _map = new MapWidget(this);
     _mapsubwindow = ui.mdiArea->addSubWindow(_map);
     _mapsubwindow->resize(400,300);
     _mapsubwindow->show();
 
-    //subwindow->resize(400,300);
-    //subwindow->show();
-    //subwindow->showMaximized();
+   //subwindow->resize(400,300);
+   //subwindow->show();
+   //subwindow->showMaximized();
 }
 
 void Visualization::CsvFileStatus(bool bSuccess, QString sFilename)
 {
-	int tmpBrk = 1;
+   int tmpBrk = 1;
 }
 
 void Visualization::OnViewTable()
@@ -185,22 +175,22 @@ void Visualization::OnViewTable()
    //!       property.  In the long run, this code will need redone to 
    //!       connect the chart(s) up to dynamically updates based on 
    //!       user selections.
-	m_viewTable = new TableEditor(sConnectionName, sDataSetName);
-	m_viewTable->setObjectName(QString::fromUtf8("chart"));
-	m_viewTable->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
-	QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewTable);
-	subwindow->showMaximized();
+   m_viewTable = new TableEditor(sConnectionName, sDataSetName);
+   m_viewTable->setObjectName(QString::fromUtf8("chart"));
+   m_viewTable->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
+   QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewTable);
+   subwindow->showMaximized();
 }
 
 
 void Visualization::OnViewParallelCoordinates()
 {
-	// ---------------------------------------------------------------------------
-	// Widget appearing in the main window as a sub-window of the visualization
-	// ---------------------------------------------------------------------------
-	m_viewPC = new Chart::ParallelCoordinates(sConnectionName, sDataSetName, &m_attrSel);
-	m_viewPC->setObjectName(QString::fromUtf8("chart"));
-	m_viewPC->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
-	QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewPC);
-	subwindow->showMaximized();
+   // ---------------------------------------------------------------------------
+   // Widget appearing in the main window as a sub-window of the visualization
+   // ---------------------------------------------------------------------------
+   m_viewPC = new Chart::ParallelCoordinates(sConnectionName, sDataSetName, &m_attrSel);
+   m_viewPC->setObjectName(QString::fromUtf8("chart"));
+   m_viewPC->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
+   QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewPC);
+   subwindow->showMaximized();
 }

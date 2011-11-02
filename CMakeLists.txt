@@ -15,7 +15,7 @@ PROJECT(VisualizationSystem)
 # =============================================================================
 # Turn on testing for this project.  Each subproject can now add tests by:
 # ADD_TEST(<TestName> ${CMAKE_CURRENT_BINARY_DIR}/SimpleTest Hello)
-ENABLE_TESTING()
+#ENABLE_TESTING()
 
 
 # =============================================================================
@@ -30,7 +30,7 @@ SET( TestCode_VERSION_STRING
 
 # =============================================================================
 # Setup the base use of Qt in this project.
-FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui QtSql REQUIRED)
+FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui QtSql QtWebKit REQUIRED)
 INCLUDE(${QT_USE_FILE})
 ADD_DEFINITIONS(${QT_DEFINITIONS})
 SET( QT_VERSION__VS_ADDIN "" )
@@ -70,5 +70,5 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 # This does not actually cause another cmake executable to run. The same 
 # process will walk through the project's entire directory structure.
 ADD_SUBDIRECTORY (src/Visualization)
-ADD_SUBDIRECTORY (src/Tests)
+#ADD_SUBDIRECTORY (src/Tests)
 

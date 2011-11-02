@@ -21,19 +21,12 @@
 
 #include "DataSelections.h"
 
+class QPixmap;
 
 namespace Chart
 {
-   //! Simple structure for storing statistics calculated for an
-   //! attribute.
-   struct Stats
-   {
-      double min;
-      double max;
-      double range;
-   };
 
-
+   //! Defines a class that draws a parallel coordinates chart.
    class ParallelCoordinates : public QWidget
    {
       Q_OBJECT
@@ -43,26 +36,23 @@ namespace Chart
       ParallelCoordinates(
          const QString& sConnectionName,
          const QString& sDataName,
-         DataSelections* selections,
+         Data::DataSelections* selections,
          QWidget *parent = 0 );
 
       virtual ~ParallelCoordinates();
 
 
-      void draw();
-
-
    protected:
       void paintEvent(QPaintEvent* event);
 
+      int                   m_nHeight;         //!< Previous height the coordinates were drawn
+      int                   m_nWidth;          //!< Previous width the coordinates were drawn
+      QString               m_sConnectionName; //!< Name of the database connection
+      QString               m_sDataName;       //!< Name of the table containing the data
+      Data::DataSelections* m_selections;      //!< User selected parameters
+      Data::Buffer          m_data;            //!< Buffer of data used by the chart
 
-      QString         m_sConnectionName; //!< Name of the database connection
-      QString         m_sDataName;       //!< Name of the table containing the data
-      DataSelections* m_selections;      //!< User selected parameters.
-      
-      //! @todo Combine these into one structure.
-      QList<Stats> m_attrStats;
-      QList<QList<double> > m_chartData; //!< Processes chart data.
+	  QPixmap*              m_chart;  //!< Area the chart is drawn in.
    };
 };
 

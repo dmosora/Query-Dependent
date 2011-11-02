@@ -28,152 +28,155 @@
 
 using namespace std;
 
-CsvParser::CsvParser(QObject* parent)
-	: m_dataMgmt(0)
-	, m_cDelim(',')
-	, m_bStop(false)
-	, m_bHasHeader(true)
+namespace Parser
 {
-}
+   CsvParser::CsvParser(QObject* parent)
+      : m_dataMgmt(0)
+      , m_cDelim(',')
+      , m_bStop(false)
+      , m_bHasHeader(true)
+   {
+   }
 
-CsvParser::~CsvParser()
-{
-	stopParse();
+   CsvParser::~CsvParser()
+   {
+      stopParse();
 
-	wait();
-}
+      wait();
+   }
 
-void CsvParser::SetParseInformation( 
-	const QString& sFilename,
-	DataMgmt* dataMgmt,
-	const QString& sTableName,
-	const QString& sConnection )
-{
-	// When a new file is received there is a new definition which means a new
-	// database configuration.  Clear the definition list to ensure there aren't
-	// any stagnant information.
-	m_mutex.lock();
-	m_sFilename = sFilename;
-	m_dataMgmt = dataMgmt;
-	m_mutex.unlock();
-}
+   void CsvParser::SetParseInformation( 
+      const QString& sFilename,
+      Data::DataMgmt* dataMgmt,
+      const QString& sTableName,
+      const QString& sConnection )
+   {
+      // When a new file is received there is a new definition which means a new
+      // database configuration.  Clear the definition list to ensure there aren't
+      // any stagnant information.
+      m_mutex.lock();
+      m_sFilename = sFilename;
+      m_dataMgmt = dataMgmt;
+      m_mutex.unlock();
+   }
 
-const int nProgressIncrements = 100;
-void CsvParser::run()
-{
-	if( !m_dataMgmt )
-	{
-		cerr << qPrintable(tr("CsvParser: No DataMgmt provided. ")) 
-			 << qPrintable(m_sFilename) << qPrintable(tr(" cannot be parsed")) << endl;
-		return;
-	}
+   const int nProgressIncrements = 100;
+   void CsvParser::run()
+   {
+      if( !m_dataMgmt )
+      {
+         cerr << qPrintable(tr("CsvParser: No DataMgmt provided. ")) 
+            << qPrintable(m_sFilename) << qPrintable(tr(" cannot be parsed")) << endl;
+         return;
+      }
 
-	QFile file( m_sFilename );
-	if( file.open( QIODevice::ReadOnly ) )
-	{
-		QStringList tokens;
+      QFile file( m_sFilename );
+      if( file.open( QIODevice::ReadOnly ) )
+      {
+         QStringList tokens;
 
-		QTextStream stream(&file);
-		QString line = stream.readLine();
+         QTextStream stream(&file);
+         QString line = stream.readLine();
 
-		// Setup the progress indication.
-		qint64 llFileSize = file.size();
-		qint64 llFilePos = stream.pos();
-		qint64 llFileInc = llFileSize/nProgressIncrements;
-		int    nLastProg = 0;
-		emit( setProgressRange(0, nProgressIncrements) );
-		emit( setCurrentProgress(0) );
+         // Setup the progress indication.
+         qint64 llFileSize = file.size();
+         qint64 llFilePos = stream.pos();
+         qint64 llFileInc = llFileSize/nProgressIncrements;
+         int    nLastProg = 0;
+         emit( setProgressRange(0, nProgressIncrements) );
+         emit( setCurrentProgress(0) );
 
-		// Process header information.
-		//! @todo The algorithm currently requires header information.  This
-		//!       isn't specifically required because we could just make up 
-		//!       names for the parameters or add the ability to hand in the
-		//!       definition data through the API.
-		if( m_bHasHeader && !line.isNull() )
-		{
-			QStringList hdrTokens;
-			QString header = line;
-			if( ExtractTokens(header, hdrTokens) )
-			{
-				line = stream.readLine();
-				if( !line.isNull() && ExtractTokens( line, tokens ) )
-				{
-					if( !m_dataMgmt->ProcessHeader( hdrTokens, tokens ) )
-					{
-						cerr << qPrintable(tr("Error extracting header information.")) << endl;
-						emit( SIGNAL(fileDone(false, m_sTableName)) );
-						return;
-					}
-				}
-			}
-		}
+         // Process header information.
+         //! @todo The algorithm currently requires header information.  This
+         //!       isn't specifically required because we could just make up 
+         //!       names for the parameters or add the ability to hand in the
+         //!       definition data through the API.
+         if( m_bHasHeader && !line.isNull() )
+         {
+            QStringList hdrTokens;
+            QString header = line;
+            if( ExtractTokens(header, hdrTokens) )
+            {
+               line = stream.readLine();
+               if( !line.isNull() && ExtractTokens( line, tokens ) )
+               {
+                  if( !m_dataMgmt->ProcessHeader( hdrTokens, tokens ) )
+                  {
+                     cerr << qPrintable(tr("Error extracting header information.")) << endl;
+                     emit( SIGNAL(fileDone(false, m_sTableName)) );
+                     return;
+                  }
+               }
+            }
+         }
 
-		// Read in the rest of the file.
-		while( !line.isNull() )
-		{
-			ExtractTokens( line, tokens );
-			m_dataMgmt->ProcessData( tokens );
-			line = stream.readLine();
-			llFilePos += line.length();
+         // Read in the rest of the file.
+         while( !line.isNull() )
+         {
+            ExtractTokens( line, tokens );
+            m_dataMgmt->ProcessData( tokens );
+            line = stream.readLine();
+            llFilePos += line.length();
 
-			if( (llFilePos - (llFileInc*nLastProg)) > llFileInc )
-			{
-				// Calculate a progress increment
-				++nLastProg;
-				emit( setCurrentProgress(nLastProg) );
-			}
-		}
-	}
+            if( (llFilePos - (llFileInc*nLastProg)) > llFileInc )
+            {
+               // Calculate a progress increment
+               ++nLastProg;
+               emit( setCurrentProgress(nLastProg) );
+            }
+         }
+      }
 
-	// Complete the data storage process.
-	m_dataMgmt->Commit();
+      // Complete the data storage process.
+      m_dataMgmt->Commit();
 
-	// The file is done loading indicate 100% progress and notify the application
-	// that the parsing is complete.
-	emit( setCurrentProgress(nProgressIncrements) );
-	emit( SIGNAL(fileDone(true, m_sTableName)) );
-	emit( SIGNAL(fileDone()) );
-}
+      // The file is done loading indicate 100% progress and notify the application
+      // that the parsing is complete.
+      emit( setCurrentProgress(nProgressIncrements) );
+      emit( SIGNAL(fileDone(true, m_sTableName)) );
+      emit( SIGNAL(fileDone()) );
+   }
 
-void CsvParser::stopParse()
-{
-	m_mutex.lock();
-	m_bStop = true;
-	m_mutex.unlock();
-}
+   void CsvParser::stopParse()
+   {
+      m_mutex.lock();
+      m_bStop = true;
+      m_mutex.unlock();
+   }
 
 
-bool CsvParser::ExtractTokens(const QString& line, QStringList& tokens)
-{
-	QString sData;
-	bool bInQuotes = false;
-	tokens.clear();
-	for( int i = 0; i < line.size(); ++i )
-	{
-		QChar c = line.at(i);
-		if( c == '\"' )
-		{
-			bInQuotes = !bInQuotes;
-		}
-		else if( !bInQuotes && c == m_cDelim )
-		{
-			tokens.append(sData);
-			sData.clear();
-		}
-		else
-		{
-			// This if statement trims whitespace from the leading edge of the token.
-			if( !sData.isEmpty() || c != ' ' )
-			{
-				sData.append(c);
-			}
-		}
-	}
+   bool CsvParser::ExtractTokens(const QString& line, QStringList& tokens)
+   {
+      QString sData;
+      bool bInQuotes = false;
+      tokens.clear();
+      for( int i = 0; i < line.size(); ++i )
+      {
+         QChar c = line.at(i);
+         if( c == '\"' )
+         {
+            bInQuotes = !bInQuotes;
+         }
+         else if( !bInQuotes && c == m_cDelim )
+         {
+            tokens.append(sData);
+            sData.clear();
+         }
+         else
+         {
+            // This if statement trims whitespace from the leading edge of the token.
+            if( !sData.isEmpty() || c != ' ' )
+            {
+               sData.append(c);
+            }
+         }
+      }
 
-	// Make sure we got the last column.
-	if( !sData.isEmpty() )
-	{
-		tokens.append(sData);
-	}
-	return true;
-}
+      // Make sure we got the last column.
+      if( !sData.isEmpty() )
+      {
+         tokens.append(sData);
+      }
+      return true;
+   }
+};

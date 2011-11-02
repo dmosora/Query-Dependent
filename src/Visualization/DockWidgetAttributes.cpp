@@ -19,14 +19,15 @@
 
 
 DockWidgetAttributes::DockWidgetAttributes(QWidget *parent)
-	: QDockWidget(parent)
-    , m_selections(0)
+   : QDockWidget(parent)
+   , m_selections(0)
 {
-	ui.setupUi(this);
+   ui.setupUi(this);
 
-	
-	connect( ui.treeWidgetAttributes, SIGNAL(itemSelectionChanged()),
-		     this,                    SLOT(SelectionChanged()) );
+
+   connect
+      ( ui.treeWidgetAttributes, SIGNAL(itemSelectionChanged())
+      ,  this,                    SLOT(SelectionChanged()) );
 }
 
 DockWidgetAttributes::~DockWidgetAttributes()
@@ -34,64 +35,64 @@ DockWidgetAttributes::~DockWidgetAttributes()
 
 }
 
-void DockWidgetAttributes::PopulateTree(DataMgmt* dataMgmt, const QString& sDataName)
+void DockWidgetAttributes::PopulateTree(Data::DataMgmt* dataMgmt, const QString& sDataName)
 {
-	QStringList hdr;
-	hdr << tr("Attribute") << tr("Type");
-	ui.treeWidgetAttributes->setHeaderLabels(hdr);
+   QStringList hdr;
+   hdr << tr("Attribute") << tr("Type");
+   ui.treeWidgetAttributes->setHeaderLabels(hdr);
 
-	//! @todo Get the actual name of the flight file and post the data using that 
-	//!       instead of the generic "Flight" label.
-	QTreeWidgetItem *parent;
-	parent = new QTreeWidgetItem(ui.treeWidgetAttributes);
-	parent->setText(0,tr("Flight"));
-	
-	QTreeWidgetItem* item;
-	const ColumnDefList& columns = dataMgmt->GetColumnDefinitions(sDataName);
-	for( int i = 0; i < columns.size(); ++i )
-	{
-		const ColumnDef& col = columns.at(i);
-		if( col.bGood )
-		{
-			item = new QTreeWidgetItem(parent);
-			item->setText(0, col.sParamName);
-			item->setData(0, Qt::UserRole, QVariant(col.sParamNameComp));
-			switch( col.eParamType )
-			{
-			case ParamType_String:
-				item->setText(1, tr("String"));
-				break;
-			case ParamType_Numeric:
-				item->setText(1, tr("Numeric"));
-				break;
-			default:
-				item->setText(1, tr("Unknown"));
-			}
-		}
-	}
-	ui.treeWidgetAttributes->sortItems(0,Qt::AscendingOrder);
+   //! @todo Get the actual name of the flight file and post the data using that 
+   //!       instead of the generic "Flight" label.
+   QTreeWidgetItem *parent;
+   parent = new QTreeWidgetItem(ui.treeWidgetAttributes);
+   parent->setText(0,tr("Flight"));
+
+   QTreeWidgetItem* item;
+   const Data::ColumnDefList& columns = dataMgmt->GetColumnDefinitions(sDataName);
+   for( int i = 0; i < columns.size(); ++i )
+   {
+      const Data::ColumnDef& col = columns.at(i);
+      if( col.bGood )
+      {
+         item = new QTreeWidgetItem(parent);
+         item->setText(0, col.sParamName);
+         item->setData(0, Qt::UserRole, QVariant(col.sParamNameComp));
+         switch( col.eParamType )
+         {
+         case Data::ParamType_String:
+            item->setText(1, tr("String"));
+            break;
+         case Data::ParamType_Numeric:
+            item->setText(1, tr("Numeric"));
+            break;
+         default:
+            item->setText(1, tr("Unknown"));
+         }
+      }
+   }
+   ui.treeWidgetAttributes->sortItems(0,Qt::AscendingOrder);
 }
 
 
-void DockWidgetAttributes::SetModel(DataSelections* selections)
+void DockWidgetAttributes::SetModel(Data::DataSelections* selections)
 {
-	m_selections = selections;
+   m_selections = selections;
 }
 
 void DockWidgetAttributes::SelectionChanged()
 {
-	QList<QTreeWidgetItem*> selections;
-	if( m_selections )
-	{
-		// Clear out the previous selections
-		m_selections->ClearSelections();
+   QList<QTreeWidgetItem*> selections;
+   if( m_selections )
+   {
+      // Clear out the previous selections
+      m_selections->ClearSelections();
 
-		// Build up a new list of selections
-		selections = ui.treeWidgetAttributes->selectedItems();
-		for( int i = 0; i < selections.size(); ++i )
-		{
-			QTreeWidgetItem* item = selections.at(i);
-			m_selections->SetSelection(item->data(0, Qt::UserRole).toString());
-		}
-	}
+      // Build up a new list of selections
+      selections = ui.treeWidgetAttributes->selectedItems();
+      for( int i = 0; i < selections.size(); ++i )
+      {
+         QTreeWidgetItem* item = selections.at(i);
+         m_selections->SetSelection(item->data(0, Qt::UserRole).toString());
+      }
+   }
 }
