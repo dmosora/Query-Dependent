@@ -17,35 +17,21 @@
 #ifndef _DATASELECTIONS_H_
 #define _DATASELECTIONS_H_
 
+#include <QStringList>
+#include <QMap>
 
-#include "DataMgmt.h"
+#include "DataTypes.h"
 
 namespace Data
 {
-   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-   //! Represents an n-dimensional point parametric with time.
-   struct Point
-   {
-      QList<QVariant>  _dataVector; //!< Represents all parameters.
-      long long        _time;       //!< Timestamp of the data vector
-   };
+   class DataMgmt;
+};
 
-   //! Represents metadata associated with a Point.
-   struct Metadata
-   {
-      double      _min;         //!< Statistical min
-      double      _max;         //!< Statistical max
-      double      _range;       //!< Range between min and max
-      ColumnDef*  _definition;  //!< Definition for the attribute
-   };
 
-   // Combination of Points over time with their associated metadata.
-   struct Buffer
-   {
-      QList<Point>    _params;
-      QList<Metadata> _metadata;
-   };
-   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+namespace Data
+{
+   //! Definition of the selections mapping a flight to its parameters.
+   typedef  QMap<QString, QStringList> Selections;
 
    //! Class to track the data selections for a particular purpose.  The
    //! long-term application of this class will be toward abstracting the 
@@ -57,20 +43,29 @@ namespace Data
       DataSelections();
       virtual ~DataSelections();
 
+      //! Sets the management structure that can will be used to access the
+      //! data pertaining to the selections.
+      void SetDataMgmt( Data::DataMgmt* dataMgmt );
+
       //! Clears out the current selections.
       void ClearSelections();
 
       //! Adds an attribute to the selections.
-      //! @param name  Name of the attribute to add to the selection.
-      void SetSelection(const QString& name);
+      //! @param sFlightName Name of the attribute to add to the selection.
+      //! @param sAttrName   Name of the attribute to add to the selection.
+      void SetSelection(const QString& sFlightName, const QString& sAttrName);
 
       //! Gets the list of currently selected attributes.
       //! @retval "Selections"  List of selected parameter names (computer name) 
-      const QStringList& GetSelectedAttributes();
+      const Selections& GetSelectedAttributes();
 
+	  //! Populates the provided data buffer with the selected attributes.
+	  //! @param data Data buffer to be populated.
+	  bool GetDataAttributes(Data::FlightDatabase& data);
 
    protected:
-      QStringList m_selections;  //!< List of selected parameters.
+      DataMgmt*   m_dataMgmt;    //!< Object used to access data.
+      Selections  m_selections;  //!< List of selected parameters.
    };
 
 };

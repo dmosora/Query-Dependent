@@ -48,7 +48,7 @@ namespace Parser
    void CsvParser::SetParseInformation( 
       const QString& sFilename,
       Data::DataMgmt* dataMgmt,
-      const QString& sTableName,
+      const QString& sFlightName,
       const QString& sConnection )
    {
       // When a new file is received there is a new definition which means a new
@@ -57,7 +57,13 @@ namespace Parser
       m_mutex.lock();
       m_sFilename = sFilename;
       m_dataMgmt = dataMgmt;
+      m_sFlightName = sFlightName;
       m_mutex.unlock();
+   }
+
+   const QString& CsvParser::GetFlightName() const
+   {
+      return m_sFlightName;
    }
 
    const int nProgressIncrements = 100;
@@ -100,10 +106,10 @@ namespace Parser
                line = stream.readLine();
                if( !line.isNull() && ExtractTokens( line, tokens ) )
                {
-                  if( !m_dataMgmt->ProcessHeader( hdrTokens, tokens ) )
+                  if( !m_dataMgmt->ProcessHeader( m_sFlightName, hdrTokens, tokens ) )
                   {
                      cerr << qPrintable(tr("Error extracting header information.")) << endl;
-                     emit( SIGNAL(fileDone(false, m_sTableName)) );
+                     emit( SIGNAL(fileDone(false, m_sFlightName)) );
                      return;
                   }
                }
@@ -114,7 +120,7 @@ namespace Parser
          while( !line.isNull() )
          {
             ExtractTokens( line, tokens );
-            m_dataMgmt->ProcessData( tokens );
+            m_dataMgmt->ProcessData( m_sFlightName, tokens, m_buffer );
             line = stream.readLine();
             llFilePos += line.length();
 
@@ -128,12 +134,12 @@ namespace Parser
       }
 
       // Complete the data storage process.
-      m_dataMgmt->Commit();
+      m_dataMgmt->Commit(m_buffer);
 
       // The file is done loading indicate 100% progress and notify the application
       // that the parsing is complete.
       emit( setCurrentProgress(nProgressIncrements) );
-      emit( SIGNAL(fileDone(true, m_sTableName)) );
+      emit( SIGNAL(fileDone(true, m_sFlightName)) );
       emit( SIGNAL(fileDone()) );
    }
 

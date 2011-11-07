@@ -24,31 +24,53 @@ DockWidgetAttributes::DockWidgetAttributes(QWidget *parent)
 {
    ui.setupUi(this);
 
-
-   connect
-      ( ui.treeWidgetAttributes, SIGNAL(itemSelectionChanged())
-      ,  this,                    SLOT(SelectionChanged()) );
-}
-
-DockWidgetAttributes::~DockWidgetAttributes()
-{
-
-}
-
-void DockWidgetAttributes::PopulateTree(Data::DataMgmt* dataMgmt, const QString& sDataName)
-{
+   // Create the header columns for the tree view.
    QStringList hdr;
    hdr << tr("Attribute") << tr("Type");
    ui.treeWidgetAttributes->setHeaderLabels(hdr);
 
-   //! @todo Get the actual name of the flight file and post the data using that 
-   //!       instead of the generic "Flight" label.
+   // Connect up to the UI to handle the items.
+   connect
+      ( ui.treeWidgetAttributes, SIGNAL(itemSelectionChanged())
+      , this,                    SLOT(SelectionChanged()) );
+}
+
+DockWidgetAttributes::~DockWidgetAttributes()
+{
+}
+
+void DockWidgetAttributes::CreatePlaceHolder(const QString& sFlightName, QWidget* placeHolder)
+{
+   // Qt documentation discourage this approach for dynamic items...
    QTreeWidgetItem *parent;
    parent = new QTreeWidgetItem(ui.treeWidgetAttributes);
-   parent->setText(0,tr("Flight"));
+   parent->setText(0,sFlightName);
+
+   if( placeHolder )
+   {
+      ui.treeWidgetAttributes->setItemWidget( parent, 1, placeHolder );
+   }
+}
+
+void DockWidgetAttributes::PopulateTree(const QString& sFlightName, Data::DataMgmt* dataMgmt)
+{
+   // First, check to see if the item is already in the tree 
+   // (presumably a placeholder)
+   QList<QTreeWidgetItem*> results = ui.treeWidgetAttributes->findItems( sFlightName, Qt::MatchExactly, 0 );
+   Q_ASSERT( results.size() < 2 ); // Should not have multiple items of the same flight name.
+   QTreeWidgetItem *parent;
+   if( results.size() > 0 )
+   {
+      parent = results.at(0);
+   }
+   else
+   {
+      parent = new QTreeWidgetItem(ui.treeWidgetAttributes);
+      parent->setText(0,sFlightName);
+   }
 
    QTreeWidgetItem* item;
-   const Data::ColumnDefList& columns = dataMgmt->GetColumnDefinitions(sDataName);
+   const Data::ColumnDefList& columns = dataMgmt->GetColumnDefinitions(sFlightName);
    for( int i = 0; i < columns.size(); ++i )
    {
       const Data::ColumnDef& col = columns.at(i);
@@ -91,8 +113,12 @@ void DockWidgetAttributes::SelectionChanged()
       selections = ui.treeWidgetAttributes->selectedItems();
       for( int i = 0; i < selections.size(); ++i )
       {
-         QTreeWidgetItem* item = selections.at(i);
-         m_selections->SetSelection(item->data(0, Qt::UserRole).toString());
+         QTreeWidgetItem* item   = selections.at(i);
+		 QTreeWidgetItem* parent = item->parent();
+		 if( item && parent )
+		 {
+			m_selections->SetSelection(parent->text(0), item->data(0, Qt::UserRole).toString());
+		 }
       }
    }
 }

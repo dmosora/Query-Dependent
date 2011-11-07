@@ -1,3 +1,19 @@
+# Visualization product for analyzing data, flight data in particular.
+# Copyright (C) 2011  David Sheets (dsheets4@kent.edu)
+#
+# Visualization is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 # =============================================================================
 # Define options specific to this sub-project
@@ -15,24 +31,29 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 SET(VISUALIZATION_SRC 
    main.cpp
    Visualization.cpp
+   DockWidgetAttributes.cpp
    CsvParser.cpp
    TableEditor.cpp
    Chart_ParallelCoordinates.cpp
    MapWidget.cpp
+   DataTypes.cpp
    DataMgmt.cpp
+   DataQueue.cpp
    DataSelections.cpp
-   DockWidgetAttributes.cpp
+   DataProcessor.cpp
+   DataNormalizer.cpp
    )
 
 # Only add headers that are for Qt.
 SET(VISUALIZATION_HDR 
    Visualization.h
    CsvParser.h
+   DataMgmt.h
    TableEditor.h
    Chart_ParallelCoordinates.h
    DockWidgetAttributes.h
    MapWidget.h
-   ) 
+   )
 
 SET(VISUALIZATION_FRM
    Visualization.ui

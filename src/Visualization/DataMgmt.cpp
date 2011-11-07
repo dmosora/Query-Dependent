@@ -30,41 +30,38 @@ using namespace std;
 
 namespace Data
 {
-   // ============================================================================
-   // ============================================================================
-   ColumnDef::ColumnDef()
-      : eParamType(ParamType_String)
-      , sParamName("")
-      , sParamNameComp("")
-      , bGood(true)
-   {
-   }
-   // ============================================================================
-   // ============================================================================
+
+   // Conversion from hours to 100 microsecond increments.
+   // 60 minutes per hour, 60 seconds per minute, 
+   // 1,000 milliseconds per second,
+   // 10 100 microsecond increments per millisecond
+   const unsigned int HoursTo100MicroSeconds = 60*60*1000*10;
 
    // This ends up being a performance switch.  The number is how many data rows
    // are added to a transaction before a commit is called.  A higher number may
    // improve the time it takes to add data to the database.
-   const int DataMgmt::nTransactionSwitch = 100;
+   const int DataMgmt::nTransactionSwitch = 1000;
 
 
-   // ============================================================================
-   // ============================================================================
+   // ==========================================================================
+   // ==========================================================================
    DataMgmt::DataMgmt( )
       : m_sConnectionName( "" )
-      , m_nTransactionNum(0)
+      , m_bStop(false)
    {
    }
 
    DataMgmt::~DataMgmt()
    {
-
+      stopProcessing();
+      wait();
    }
 
 
-   // ============================================================================
-   // ============================================================================
-   bool DataMgmt::Connect( const QString& sConnectionName, const QString& sTableName )
+   // ==========================================================================
+   // Database logic
+   // ==========================================================================
+   bool DataMgmt::Connect( const QString& sConnectionName )
    {	
       // Reset the cached data.
       m_columns.clear();
@@ -83,13 +80,15 @@ namespace Data
 
       // Capture the connection information.
       m_sConnectionName = sConnectionName;
-      m_sTableName      = sTableName;
 
       // Temporary return value pending implementation.
       return true;
    }
 
-   bool DataMgmt::ProcessHeader( const QStringList& hdr, const QStringList& data )
+   bool DataMgmt::ProcessHeader( 
+      const QString& sFlightName,
+      const QStringList& hdr,
+      const QStringList& data )
    {
       // Verify that the input data matches between the header row and the
       // data row.
@@ -99,20 +98,21 @@ namespace Data
          return false;
       }
 
-      // Get the database from the connection name and open a transaction.
-      // Until the transaction is committed none of the executed queries are 
-      // actually applied to the database.
+      //! @todo Creating the header is unfortunately complicated because we
+      //!        have to commit everything first to avoid nested commits.  
+      //!        This extends the load time of the files in the beginning.
+      m_mutex.lock();
       m_db.transaction();
 
       // If the database contains the indicated table already the procedure is
       // to delete it and recreate it from the data in the file being parsed.
       QSqlQuery q(m_db);
       QString sQuery = "DROP TABLE IF EXISTS ";
-      sQuery.append( m_sTableName );
+      sQuery.append( sFlightName );
       if( !q.exec(sQuery) )
       {
          QSqlError err = q.lastError();
-         cerr << "Error creating table " << qPrintable(m_sTableName) << endl;
+         cerr << "Error creating table " << qPrintable(sFlightName) << endl;
          cerr << "   Error message: " << qPrintable( err.text() ) << endl;
       }
 
@@ -120,8 +120,9 @@ namespace Data
       // The table is given an auto-incrementing ID.
       //! @todo Future iterations would be better if they allowed the input file,
       //!       user, or other source provide intelligent indexing for the data.
-      ColumnDef def;
-      sQuery = "CREATE TABLE " + m_sTableName + "(ID INTEGER PRIMARY KEY AUTOINCREMENT,";
+      ColumnDef     def;
+      ColumnDefList defList;
+      sQuery = "CREATE TABLE " + sFlightName + "(ID INTEGER PRIMARY KEY AUTOINCREMENT,";
       bool bSuccess = true;
       for( int i = 0; i < data.size(); ++i )
       {
@@ -140,9 +141,9 @@ namespace Data
          // Make sure that there are not duplicates in the column names.  If there are
          // it's first come first serve, ignore all subsequent columns and flag them
          // as no good.
-         for( int j = 0; j < m_columns.size(); ++j )
+         for( int j = 0; j < defList.size(); ++j )
          {
-            if( m_columns.at(j).sParamNameComp == def.sParamNameComp )
+            if( defList.at(j).sParamNameComp == def.sParamNameComp )
             {
                // This is a duplicate parameter, set the ColumnDef accordingly.
                def.bGood = false;
@@ -173,8 +174,11 @@ namespace Data
          // in the table.  This is because when the data string lists are 
          // provided to ProcessData the removed columns must be filtered 
          // there as well.
-         m_columns.push_back(def);
+         defList.push_back(def);
       }
+
+      // Save off the column definitions.
+      m_columns[sFlightName] = defList;
 
       // Replace the last comma separator with a parenthesis to close out the SQL
       // query.  The string logic above just blindly places a comma after every value.
@@ -183,7 +187,7 @@ namespace Data
       // Execute the query to create the data table.
       if( !q.exec(sQuery) )
       {
-         cerr << "Failed to create table " << qPrintable(m_sTableName) << " for database " << qPrintable(m_sConnectionName) << endl;
+         cerr << "Failed to create table " << qPrintable(sFlightName) << " for database " << qPrintable(m_sConnectionName) << endl;
          cerr << "   Query: " << qPrintable(sQuery) << endl;
          cerr << "   Error Message: " << qPrintable(q.lastError().text()) << endl;
          m_db.rollback();
@@ -200,6 +204,7 @@ namespace Data
       // Commit the transaction.  i.e. Apply the SQL statements that have been 
       // executed since the last call to db.transaction.
       m_db.commit();
+      m_mutex.unlock();
 
       return true;
    }
@@ -208,49 +213,40 @@ namespace Data
    // header row.  Each token is processed according to a parallel ColumnDef
    // that indicates whether the column is good and what data type it is.  The
    // data is inserted into the database.
-   void DataMgmt::ProcessData( const QStringList& data )
-   {	
-      // If the indicated number of transactions have been queued up, then call
-      // to commit the data and and begin a new transaction.
-      if( (m_nTransactionNum % nTransactionSwitch) == 0 )
+   void DataMgmt::ProcessData( 
+      const QString& sFlightName,
+      const QStringList& data,
+      DataBuffer& buffer )
+   {
+      // Find the column names matching this flight.
+      FlightColumnMap::const_iterator i = m_columns.find(sFlightName);
+      if( i == m_columns.constEnd() )
       {
-         Commit();
+         cerr << "Process data called on a flight without a header.  Cannot process" << endl;
+         return;
       }
-
-      // If a transaction is not currently open, create one.
-      if( m_nTransactionNum == 0 )
-      {
-         if( !m_db.transaction() )
-         {
-            cerr << "Error beginning transaction." << endl;
-            cerr << "   Error Message: " << qPrintable(m_db.lastError().text()) << endl;
-         }
-      }
-
-      // The next transaction in this queue.
-      ++m_nTransactionNum;
-
+      const ColumnDefList& defList = i.value();
+      
       // Create a query class and start constructing the query string.
-      QSqlQuery q(m_db);
-      QString sQueryColumns = "INSERT INTO " + m_sTableName + "(";
+      QString sQueryColumns = "INSERT INTO " + sFlightName + "(";
       QString sQueryValues  = " VALUES(";
 
       QString value;
       bool bSuccess = true;
-      for( int i = 0; i < m_columns.size(); ++i )
+      for( int i = 0; i < defList.size(); ++i )
       {
          // If this is a column that was ignored from the data then
          // skip this in the input data.  That is, when the header was 
          // processed this column was flagged as no good.  Therefore it
          // is ignored when inserting data into the database.
-         if( !m_columns.at(i).bGood )
+         if( !defList.at(i).bGood )
          {
             continue;
          }
 
          // Build the VALUES portion of the query according to the data
          // ColumnDef, paying attention to the 
-         if( m_columns.at(i).eParamType == ParamType_String )
+         if( defList.at(i).eParamType == ParamType_String )
          {
             value = "\"" + data.at(i) + "\"";
          }
@@ -271,7 +267,7 @@ namespace Data
          // Since the query specifies both the column name and value this works.
          if( !value.isEmpty() )
          {
-            sQueryColumns.append(m_columns.at(i).sParamNameComp);
+            sQueryColumns.append(defList.at(i).sParamNameComp);
             sQueryColumns.append(",");
             sQueryValues.append(value);
             sQueryValues.append(",");
@@ -284,40 +280,201 @@ namespace Data
       sQueryValues.replace (sQueryValues.length()-1, 1, ')');
       QString sQuery = sQueryColumns + sQueryValues;
 
-      // Execute the query and check for any error messages.
+      buffer.data.push_back(sQuery);
+      if( buffer.data.size() > nTransactionSwitch )
+      {
+         Commit( buffer );
+      }
+   }
+   
+   
+   // ==========================================================================
+   // Accessor methods
+   // ==========================================================================
+   const ColumnDefList& DataMgmt::GetColumnDefinitions(const QString& sFlightName) const
+   {
+      static Data::ColumnDefList NullColumnDef;
+
+      FlightColumnMap::const_iterator i = m_columns.find(sFlightName);
+
+      if( i == m_columns.constEnd() )
+      {
+         return NullColumnDef;
+      }
+
+      return i.value();
+   }
+
+   bool DataMgmt::GetDataAttributes(
+      const QString& sFlight,
+      const QStringList& attributes,
+      Data::Buffer& data)
+   {
+      int nAttr = attributes.size();
+
+      // Initialize the statistics data to calculate normalization and 
+      // construct the query to retrieve data.
+      QString sQuery = "SELECT _zulu_time,";
+      Data::Metadata meta;
+      meta._max = INT_MIN;
+      meta._min = INT_MAX;
+      meta._sum = 0;
+      meta._count = 0;
+
+      for( int i = 0; i < nAttr; ++i )
+      {
+         data._metadata.push_back(meta);
+
+         sQuery += attributes.at(i);
+         sQuery += ",";
+      }
+      // Replace the last comma separator to close out the SQL query.  The 
+      // string logic above just blindly places a comma after every value.
+      sQuery.replace(sQuery.length()-1, 1, ' ');
+      // Add the from portion to select from the correct table.
+      sQuery +=  " FROM " + sFlight;
+
+      QSqlDatabase db = QSqlDatabase::database( m_sConnectionName );
+      QSqlQuery q(db);
       if( !q.exec(sQuery) )
       {
-         cerr << "Failed to insert data into table " << qPrintable(m_sTableName)
-            << " for database " << qPrintable(m_sConnectionName) << endl;
-         cerr << "   Query: " << qPrintable(sQuery) << endl;
-         cerr << "   Error Message: " << qPrintable(q.lastError().text()) << endl;
+         QSqlError err = q.lastError();
+         std::cerr << "Error querying table " << qPrintable(sFlight) << std::endl;
+         std::cerr << "   Error message: " << qPrintable( err.text() ) << std::endl;
       }
-   }
 
-   void DataMgmt::Commit()
-   {
-      // If any new transactions have been queued up then commit them.
-      if( m_nTransactionNum > 0 )
+      // Extract the data from the database.
+      bool bSuccess = false;
+      while( q.next() )
       {
-         if( !m_db.commit() )
+         Data::Point point;
+         QSqlRecord rec = q.record();
+
+         // The first record should always be time.
+         QSqlField field = rec.field(0);
+         double time = field.value().toDouble(&bSuccess);
+         if( bSuccess )
          {
-            cerr << "Error committing data.  Transaction rolled back." << endl;
-            cerr << "   Error Message: " << qPrintable(m_db.lastError().text()) << endl;
-            m_db.rollback();
+            //! @todo Time conversion might be better as a process into
+            //!       database vs. coming out but at least it's all
+            //!       abstracted behind this class.
+            // Convert hours to the 100 microsecond increments.
+            point._time = time * HoursTo100MicroSeconds;
          }
-         m_nTransactionNum = 0;
+         else
+         {
+            point._time = 0;
+         }
+
+         int m = 0;
+         for( int i = 1; i < rec.count(); ++i )
+         {
+            m = i-1;
+            field = rec.field(i);
+
+            // Extract the data value.
+            double value = field.value().toDouble(&bSuccess);
+            if( bSuccess )
+            {
+               // Add the value to the data buffer.
+               point._dataVector.push_back(field.value());
+
+               // Update the running statistics.
+               data._metadata[m]._sum += value;
+               ++data._metadata[m]._count;
+               if( value < data._metadata[m]._min )
+               {
+                  data._metadata[m]._min = value;
+               }
+               if( value > data._metadata[m]._max )
+               {
+                  data._metadata[m]._max = value;
+               }
+            }
+            else
+            {
+               std::cerr << "Error getting data for chart. idx=" << i << std::endl;
+            }
+         }
+         // Add the value to the data buffer.
+         data._params.push_back(point);
+      }
+
+      for( int m = 0; m < data._metadata.size(); ++m )
+      {
+         // First, calculate the range from the min and max.
+         data._metadata[m]._range = 
+            data._metadata[m]._max - data._metadata[m]._min;
+
+         data._metadata[m]._avg = data._metadata[m]._sum	/ data._metadata[m]._count;
+      }
+
+      // Number of statistics calculated must match the number of attributes.
+      Q_ASSERT( data._params.size() > 0 && 
+         data._metadata.size() == data._params[0]._dataVector.size() );
+
+      return true;
+   }
+   
+   
+   // ==========================================================================
+   // Threading methods
+   // ==========================================================================
+   void DataMgmt::Commit(DataBuffer& buffer)
+   {
+      // This is the producer portion of the threading.  This method is called
+      // by another thread, which places the data into the queue.
+      if( !buffer.data.empty() )
+      {
+         m_queue.Enqueue(buffer);
+         buffer.data.clear();
+      }
+   }
+  
+   void DataMgmt::run()
+   {
+      // This is the consumer of the threaded data read.  It pulls items off 
+      // the queue and performs the call to the database.
+      DataBuffer buffer;
+      while( !m_bStop )
+      {
+         if( m_queue.Dequeue(buffer) )
+         {
+            m_mutex.lock();
+            m_db.transaction();
+
+            QSqlQuery q(m_db);
+            for( int i = 0; i < buffer.data.size(); ++i )
+            {
+               // Execute the query and check for any error messages.
+               if( !q.exec(buffer.data.at(i)) )
+               {
+                  cerr << "Failed to execute data into table " << qPrintable(buffer.data.at(i));
+                  cerr << " for database " << qPrintable(m_sConnectionName) << endl;
+                  cerr << "   Error Message: " << qPrintable(q.lastError().text()) << endl;
+               }
+            }
+
+            m_db.commit();
+            m_mutex.unlock();
+         }
+         else
+         {
+            // Give some time to allow the queue to populate but don't
+            // hog all the processing time.
+            QThread::sleep( 2 );
+         }
       }
    }
 
-
-   // ============================================================================
-   //! @todo This will likely need to take the name of the table, which will 
-   //!       correspond to the flight, so that the application can support
-   //!       having multiple flights loaded.  For now, just return the single 
-   //!       set of column names.
-   const ColumnDefList& DataMgmt::GetColumnDefinitions(const QString& sFlightName)
+   void DataMgmt::stopProcessing()
    {
-      return m_columns;
+      m_mutex.lock();
+      m_bStop = true;
+      m_mutex.unlock();
    }
+
+   // ==========================================================================
+   // ==========================================================================
 
 };

@@ -15,18 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <iostream>
+
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QSqlError>
 
+#include "DataMgmt.h"
 #include "DataSelections.h"
+
 
 
 namespace Data
 {
    DataSelections::DataSelections()
+	   : m_dataMgmt(0)
    {
    }
 
@@ -35,19 +40,47 @@ namespace Data
 
    }
 
+   
+   void DataSelections::SetDataMgmt( DataMgmt* dataMgmt )
+   {
+      m_dataMgmt = dataMgmt;
+   }
+
    void DataSelections::ClearSelections()
    {
       m_selections.clear();
    }
 
+   void DataSelections::SetSelection(const QString& sFlightName, const QString& sAttrName)
+   {
+      m_selections[sFlightName].push_back(sAttrName);
+   }
 
-   const QStringList& DataSelections::GetSelectedAttributes()
+   const Selections& DataSelections::GetSelectedAttributes()
    {
       return m_selections;
    }
-
-   void DataSelections::SetSelection(const QString& column)
+   
+   bool DataSelections::GetDataAttributes(Data::FlightDatabase& data)
    {
-      m_selections.push_back(column);
+      if( !m_dataMgmt )
+	  {
+		  return false;
+	  }
+
+      bool retVal = true;
+
+      // Clear out the lists in preparation to populate them.
+      data.clear();
+
+      // Iterate over all of the selections and query each flight.
+      Selections::iterator i;
+      for( i = m_selections.begin() ; i != m_selections.end(); ++i )
+      {
+         retVal &= m_dataMgmt->GetDataAttributes(i.key(), i.value(), data[i.key()]);
+      }
+
+      return retVal;
    }
+
 };

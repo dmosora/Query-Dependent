@@ -19,6 +19,7 @@
 
 #include <QPixmap>
 #include <QFileDialog>
+#include <QProgressBar>
 #include <QMessageBox>
 #include <QLabel>
 #include <QProgressBar>
@@ -32,9 +33,8 @@
 #include "Visualization.h"
 
 
-const QString sDataSetName    = "DataName";    //! @todo Calculate the database name
-const QString sConnectionName = "DataName.db"; //! @todo Calculate the connection name
-
+const QString sConnectionName = "Database.db"; //! @todo Calculate the connection name
+const QSize DefaultWindowSize(400,300);
 
 using namespace std;
 
@@ -43,13 +43,16 @@ using namespace std;
 Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
    : QMainWindow(parent, flags)
    , _map()
-   , m_progress(NULL)
    , m_viewPC(NULL)
    , m_viewTable(NULL)
+   , m_nNextFlightNum(0)
 {
    ui.setupUi(this);
 
+   m_dataMgmt.Connect( sConnectionName );
    this->addDockWidget(Qt::LeftDockWidgetArea, &m_dockWidgetAttr);
+   m_attrSel.SetDataMgmt( &m_dataMgmt );
+   m_dockWidgetAttr.SetModel( &m_attrSel );
 
    // -------------------------------------------------------------------------
    // Basic application function connections
@@ -58,15 +61,15 @@ Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
    // -------------------------------------------------------------------------
 
    // -------------------------------------------------------------------------
-   // CSV Parser connections
-   connect( &m_csvParser, SIGNAL(finished()),   this, SLOT(CsvFileDone()) );
-   // -------------------------------------------------------------------------
-
-   // -------------------------------------------------------------------------
    // Visualization connections
    connect
       ( ui.actionParallel_Coordinates, SIGNAL(triggered())
       , this,                          SLOT(OnViewParallelCoordinates()) );
+   // -------------------------------------------------------------------------
+
+   // -------------------------------------------------------------------------
+   // Connect the Table View for the data.
+   connect( ui.actionTable, SIGNAL(triggered()), this, SLOT(OnViewTable()) );
    // -------------------------------------------------------------------------
 }
 
@@ -82,66 +85,61 @@ void Visualization::closeEvent( QCloseEvent* event )
 
 void Visualization::LoadFile()
 {
-   // If a file is currently being parsed then indicate that the user must 
-   // wait for it to finish.
-   if( m_csvParser.isRunning() )
-   {
-      QMessageBox message;
-      message.setText(tr("The previously selected file is still loading!"
-         "Please wait for it to complete."));
-      message.exec();
-
-      return;
-   }
-
    // Create a file open dialog and prompt the user for a file.
-   QString sFilename = QFileDialog::getOpenFileName(this,
+   QStringList sFilenames = QFileDialog::getOpenFileNames(this,
       tr("Open CSV"), "", tr("CSV Files (*.csv)") );
 
-   // If a file was selected then create a database for the 
-   if( !sFilename.isEmpty() )
+   // Prepare to process the data from the queue.
+   if( !m_dataMgmt.isRunning() )
    {
-      QFile file;
-      m_dataMgmt.Connect( sConnectionName, sDataSetName );
-      m_csvParser.SetParseInformation( sFilename, &m_dataMgmt, sDataSetName, sConnectionName );
+      m_dataMgmt.start();
+   }
 
-      if( !m_progress )
-      {
-         QLabel* label = new QLabel(tr("Loading ") + sDataSetName);
-         m_progress = new QProgressBar();
-         ui.statusBar->addWidget(label);
-         ui.statusBar->addWidget(m_progress);
-      }
+   // If a file was selected then create a database for the 
+   for( int s = 0; s < sFilenames.size(); ++s )
+   {
+      QString sFlightName;
+      sFlightName.sprintf("Flight_%03d", ++m_nNextFlightNum);
+
+
+      Parser::CsvParser* parser = new Parser::CsvParser;
+      parser->SetParseInformation( sFilenames.at(s), &m_dataMgmt, sFlightName, sConnectionName );
+
+      // Set the progress bar and a placeholder in the tree widget.
+      QProgressBar* progress = new QProgressBar();
+      m_dockWidgetAttr.CreatePlaceHolder( sFlightName, progress );
 
       // Connect the progress bar to the status updates from the CSV parsing thread.
       connect
-         ( &m_csvParser,      SIGNAL(setProgressRange(int,int))
-         , m_progress,        SLOT(setRange(int,int)) );
+         ( parser,       SIGNAL(setProgressRange(int,int))
+         , progress,     SLOT(setRange(int,int)) );
       connect
-         ( &m_csvParser,      SIGNAL(setCurrentProgress(int))
-         , m_progress,        SLOT(setValue(int)) );
+         ( parser,       SIGNAL(setCurrentProgress(int))
+         , progress,     SLOT(setValue(int)) );
+      connect
+         ( parser,       SIGNAL(finished())
+         , this,         SLOT(CsvFileDone()) );
 
-      m_csvParser.start();
+      parser->start();
    }
 }
 
 void Visualization::CsvFileDone()
 {
+   Parser::CsvParser* parser = dynamic_cast<Parser::CsvParser*>(QObject::sender());
+
+   if( !parser )
+   {
+      std::cerr << "Error accessing flight data after load" << std::endl;
+      return;
+   }
+
    // -------------------------------------------------------------------------
    // Setup the attributes tree.
    // -------------------------------------------------------------------------
-   m_dockWidgetAttr.PopulateTree(&m_dataMgmt, sDataSetName);
-   m_dockWidgetAttr.SetModel( &m_attrSel );
+   m_dockWidgetAttr.PopulateTree(parser->GetFlightName(), &m_dataMgmt);
    // -------------------------------------------------------------------------
 
-   // -------------------------------------------------------------------------
-   // Connect the Table View for the data.
-   connect( ui.actionTable, SIGNAL(triggered()), this, SLOT(OnViewTable()) );
-   // ---------------------------------------------------------------------------
-
-   // ---------------------------------------------------------------------------
-   // Setup the attributes tree.
-   // ---------------------------------------------------------------------------
 
    // ---------------------------------------------------------------------------
    // Example widget appearing in the main window as a sub-window of the 
@@ -149,17 +147,19 @@ void Visualization::CsvFileDone()
    createVisualizationUI();
 
    // ---------------------------------------------------------------------------
+   // Clean up the parser.
+   delete parser;
 }
 
 // This function is where we should set up the widgets we will use.
 void Visualization::createVisualizationUI()
 {
-    _map = new MapWidget(this);
-    _mapsubwindow = ui.mdiArea->addSubWindow(_map);
-    _mapsubwindow->resize(400,300);
-    _mapsubwindow->show();
+   _map = new MapWidget(this);
+   _mapsubwindow = ui.mdiArea->addSubWindow(_map);
+   _mapsubwindow->resize(DefaultWindowSize);
+   _mapsubwindow->show();
 
-   //subwindow->resize(400,300);
+   //subwindow->resize(DefaultWindowSize);
    //subwindow->show();
    //subwindow->showMaximized();
 }
@@ -175,22 +175,27 @@ void Visualization::OnViewTable()
    //!       property.  In the long run, this code will need redone to 
    //!       connect the chart(s) up to dynamically updates based on 
    //!       user selections.
-   m_viewTable = new TableEditor(sConnectionName, sDataSetName);
-   m_viewTable->setObjectName(QString::fromUtf8("chart"));
-   m_viewTable->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
-   QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewTable);
-   subwindow->showMaximized();
+   const Data::Selections& selections = m_attrSel.GetSelectedAttributes();
+   for( Data::Selections::iterator i = selections.begin(); i != selections.end(); ++i )
+   {
+      m_viewTable = new TableEditor(sConnectionName, i.key());
+      m_viewTable->setObjectName(QString::fromUtf8("chart"));
+      m_viewTable->setWindowTitle(QApplication::translate("VisualizationClass", qPrintable(i.key()), 0, QApplication::UnicodeUTF8));
+      QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewTable);
+      subwindow->setAttribute( Qt::WA_DeleteOnClose );
+      subwindow->resize(DefaultWindowSize);
+      subwindow->show();
+   }
 }
 
 
 void Visualization::OnViewParallelCoordinates()
 {
-   // ---------------------------------------------------------------------------
-   // Widget appearing in the main window as a sub-window of the visualization
-   // ---------------------------------------------------------------------------
-   m_viewPC = new Chart::ParallelCoordinates(sConnectionName, sDataSetName, &m_attrSel);
+   m_viewPC = new Chart::ParallelCoordinates(&m_attrSel);
    m_viewPC->setObjectName(QString::fromUtf8("chart"));
    m_viewPC->setWindowTitle(QApplication::translate("VisualizationClass", "Chart", 0, QApplication::UnicodeUTF8));
    QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(m_viewPC);
-   subwindow->showMaximized();
+   subwindow->setAttribute( Qt::WA_DeleteOnClose );
+   subwindow->resize(DefaultWindowSize);
+   subwindow->show();
 }

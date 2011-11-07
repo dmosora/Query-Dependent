@@ -21,6 +21,8 @@
 #include <QThread>
 #include <QMutex>
 
+#include "DataTypes.h"
+
 // Forward declaration to minimize include dependence.
 namespace Data
 {
@@ -41,15 +43,19 @@ namespace Parser
       ~CsvParser();
 
       //! Sets the information needed to parse data from the CSV file.
-      //! @param sFilename   Path and name of the CSV file 
-      //! @param sTableName  Name of the data table
+      //! @param sFilename   Path and name of the CSV file
+      //! @param dataMgmt    Data manager object used to store parsed data
+      //! @param sFlightName Name of the data table
       //! @param sConnection Name of the data set
       void SetParseInformation( 
          const QString& sFilename,
          Data::DataMgmt* dataMgmt,
-         const QString& sTableName,
+         const QString& sFlightName,
          const QString& sConnection );
 
+      //! Returns the flight name from the last call to SetParseInformation.
+      //! @retval "Flight Name"  sFlightName parameter from the last SetParseInformation
+      const QString& GetFlightName() const;
 
    public slots:
       //! Slot to handle an interrupt signal.  This will stop the file parsing.
@@ -88,12 +94,15 @@ namespace Parser
 
 
    private:
-      QMutex          m_mutex;      //!< Mutex for thread safety
-      Data::DataMgmt* m_dataMgmt;   //!< DataMgmt interface to store data
-      QString         m_sFilename;  //!< Name of the file to be parsed.
-      QChar           m_cDelim;     //!< Character matching the delimiter, e.g. ','
-      bool            m_bStop;      //!< Flag indicating that parsing should stop.
-      bool            m_bHasHeader; //!< Flag indicating whether the data has a header
+      QMutex              m_mutex;       //!< Mutex for thread safety
+      Data::DataMgmt*     m_dataMgmt;    //!< DataMgmt interface to store data
+      Data::ColumnDefList m_columns;     //!< List of column definitions used by the parser
+      Data::DataBuffer    m_buffer;      //!< Buffer containing data to be committed
+      QString             m_sFilename;   //!< Name of the file to be parsed
+      QString             m_sFlightName; //!< Name of the flight
+      QChar               m_cDelim;      //!< Character matching the delimiter, e.g. ','
+      bool                m_bStop;       //!< Flag indicating that parsing should stop
+      bool                m_bHasHeader;  //!< Flag indicating whether the data has a header
    };
 };
 #endif // CSVPARSER_H

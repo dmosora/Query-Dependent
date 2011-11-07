@@ -34,8 +34,6 @@ namespace Chart
    public:
 
       ParallelCoordinates(
-         const QString& sConnectionName,
-         const QString& sDataName,
          Data::DataSelections* selections,
          QWidget *parent = 0 );
 
@@ -47,10 +45,9 @@ namespace Chart
 
       int                   m_nHeight;         //!< Previous height the coordinates were drawn
       int                   m_nWidth;          //!< Previous width the coordinates were drawn
-      QString               m_sConnectionName; //!< Name of the database connection
-      QString               m_sDataName;       //!< Name of the table containing the data
+	  int                   m_nNumAttrs;       //!< Number of attributes 
       Data::DataSelections* m_selections;      //!< User selected parameters
-      Data::Buffer          m_data;            //!< Buffer of data used by the chart
+      Data::FlightDatabase  m_data;            //!< Buffer of data used by the chart
 
 	  QPixmap*              m_chart;  //!< Area the chart is drawn in.
    };

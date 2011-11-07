@@ -35,9 +35,6 @@
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QWidget" name="widget" native="true"/>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -46,7 +43,7 @@
      <x>0</x>
      <y>0</y>
      <width>707</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
