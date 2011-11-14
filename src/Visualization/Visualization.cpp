@@ -30,10 +30,11 @@
 
 #include "TableEditor.h"
 #include "Chart_ParallelCoordinates.h"
+#include "EventDetector.h"
 #include "Visualization.h"
 
 
-const QString sConnectionName = "Database.db"; //! @todo Calculate the connection name
+const QString sConnectionName = "Database.db";
 const QSize DefaultWindowSize(400,300);
 
 using namespace std;
@@ -53,11 +54,29 @@ Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
    this->addDockWidget(Qt::LeftDockWidgetArea, &m_dockWidgetAttr);
    m_attrSel.SetDataMgmt( &m_dataMgmt );
    m_dockWidgetAttr.SetModel( &m_attrSel );
+   
+   QLabel* label = new QLabel(tr("Data Commit: "));
+   QProgressBar* progress = new QProgressBar();
+   ui.statusBar->addWidget(label);
+   ui.statusBar->addWidget(progress);
 
    // -------------------------------------------------------------------------
    // Basic application function connections
    connect( ui.actionExit, SIGNAL(triggered()), this, SLOT(close()) );
    connect( ui.actionOpen, SIGNAL(triggered()), this, SLOT(LoadFile()) );
+   // -------------------------------------------------------------------------
+
+   // -------------------------------------------------------------------------
+   // Data loading signals.
+   connect
+      ( &m_dataMgmt,  SIGNAL(FlightComplete(QString))
+      , this,         SLOT(DatabaseStatus(QString)) );
+   connect
+      ( &m_dataMgmt,  SIGNAL(setProgressRange(int,int))
+      , progress,     SLOT(setRange(int,int)) );
+   connect
+      ( &m_dataMgmt,  SIGNAL(setCurrentProgress(int))
+      , progress,     SLOT(setValue(int)) );
    // -------------------------------------------------------------------------
 
    // -------------------------------------------------------------------------
@@ -87,7 +106,7 @@ void Visualization::LoadFile()
 {
    // Create a file open dialog and prompt the user for a file.
    QStringList sFilenames = QFileDialog::getOpenFileNames(this,
-      tr("Open CSV"), "", tr("CSV Files (*.csv)") );
+      tr("Open CSV"), "../../../data", tr("CSV Files (*.csv)") );
 
    // Prepare to process the data from the queue.
    if( !m_dataMgmt.isRunning() )
@@ -98,8 +117,24 @@ void Visualization::LoadFile()
    // If a file was selected then create a database for the 
    for( int s = 0; s < sFilenames.size(); ++s )
    {
+      // Try to extract the flight name based on the file name.
       QString sFlightName;
-      sFlightName.sprintf("Flight_%03d", ++m_nNextFlightNum);
+      int index = sFilenames.at(s).lastIndexOf(QDir::separator());
+      if( index != -1 )
+      {
+         index = sFilenames.at(s).length() - index - 1;
+         sFlightName = sFilenames.at(s).right(index);
+         index = sFlightName.lastIndexOf('.');
+         if( index != -1 )
+         {
+            sFlightName = sFlightName.left(index);
+         }
+         sFlightName.replace(' ', '_');
+      }
+      else
+      {
+         sFlightName.sprintf("Default_%03d", ++m_nNextFlightNum);
+      }
 
 
       Parser::CsvParser* parser = new Parser::CsvParser;
@@ -116,6 +151,8 @@ void Visualization::LoadFile()
       connect
          ( parser,       SIGNAL(setCurrentProgress(int))
          , progress,     SLOT(setValue(int)) );
+
+      // Connect the CSV parser so we can cleanup the memory.
       connect
          ( parser,       SIGNAL(finished())
          , this,         SLOT(CsvFileDone()) );
@@ -134,10 +171,25 @@ void Visualization::CsvFileDone()
       return;
    }
 
+   // ---------------------------------------------------------------------------
+   // Clean up the parser.
+   delete parser;
+}
+
+void Visualization::DatabaseStatus(QString sFlightName)
+{
+   // -------------------------------------------------------------------------
+   // Detect the events for the flight.
+   // -------------------------------------------------------------------------
+   Event::EventDetector evtDetect;
+   Event::EventData evtData;
+   evtDetect.DetectEvents( sFlightName, &m_dataMgmt, evtData);
+
+
    // -------------------------------------------------------------------------
    // Setup the attributes tree.
    // -------------------------------------------------------------------------
-   m_dockWidgetAttr.PopulateTree(parser->GetFlightName(), &m_dataMgmt);
+   m_dockWidgetAttr.PopulateTree(sFlightName, &m_dataMgmt);
    // -------------------------------------------------------------------------
 
 
@@ -145,10 +197,6 @@ void Visualization::CsvFileDone()
    // Example widget appearing in the main window as a sub-window of the 
    // visualization
    createVisualizationUI();
-
-   // ---------------------------------------------------------------------------
-   // Clean up the parser.
-   delete parser;
 }
 
 // This function is where we should set up the widgets we will use.
@@ -164,17 +212,8 @@ void Visualization::createVisualizationUI()
    //subwindow->showMaximized();
 }
 
-void Visualization::CsvFileStatus(bool bSuccess, QString sFilename)
-{
-   int tmpBrk = 1;
-}
-
 void Visualization::OnViewTable()
 {
-   //! @todo This might be a memory leak.  Determine the DeleteOnClose 
-   //!       property.  In the long run, this code will need redone to 
-   //!       connect the chart(s) up to dynamically updates based on 
-   //!       user selections.
    const Data::Selections& selections = m_attrSel.GetSelectedAttributes();
    for( Data::Selections::iterator i = selections.begin(); i != selections.end(); ++i )
    {

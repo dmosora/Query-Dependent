@@ -61,6 +61,11 @@ namespace Data
       
       return bRetVal;
    }
+   
+   int DataQueue::Size( ) const
+   {
+      return m_queue.size();
+   }
       
    bool DataQueue::PopAll( QList<DataBuffer>& list )
    {

@@ -39,6 +39,8 @@ namespace Data
    class DataSelections
    {
    public:
+      //! Constant indicating that the selection applies to all flights.
+      static const QString WilcardFlight;
 
       DataSelections();
       virtual ~DataSelections();

@@ -89,7 +89,11 @@ namespace Data
    class DataBuffer
    {
    public:
+      DataBuffer();
+
       QStringList data;
+      QString     sFlightName;
+      bool        bLastBuffer;
    };
 
 };

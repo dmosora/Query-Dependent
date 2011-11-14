@@ -30,8 +30,15 @@
 
 namespace Data
 {
+   // ==========================================================================
+   // ==========================================================================
+   const QString DataSelections::WilcardFlight = "*";
+
+
+   // ==========================================================================
+   // ==========================================================================
    DataSelections::DataSelections()
-	   : m_dataMgmt(0)
+      : m_dataMgmt(0)
    {
    }
 
@@ -40,7 +47,9 @@ namespace Data
 
    }
 
-   
+
+   // ==========================================================================
+   // ==========================================================================
    void DataSelections::SetDataMgmt( DataMgmt* dataMgmt )
    {
       m_dataMgmt = dataMgmt;
@@ -60,13 +69,13 @@ namespace Data
    {
       return m_selections;
    }
-   
+
    bool DataSelections::GetDataAttributes(Data::FlightDatabase& data)
    {
       if( !m_dataMgmt )
-	  {
-		  return false;
-	  }
+      {
+         return false;
+      }
 
       bool retVal = true;
 
@@ -77,7 +86,22 @@ namespace Data
       Selections::iterator i;
       for( i = m_selections.begin() ; i != m_selections.end(); ++i )
       {
-         retVal &= m_dataMgmt->GetDataAttributes(i.key(), i.value(), data[i.key()]);
+         if( i.key() == WilcardFlight )
+         {
+            // The wildcard results in a request to all flights.
+            QStringList flights;
+            m_dataMgmt->GetLoadedFlights(flights);
+            QStringListIterator fIdx(flights);
+            while( fIdx.hasNext() )
+            {
+               QString flight = fIdx.next();
+               retVal &= m_dataMgmt->GetDataAttributes(flight, i.value(), data[flight]);
+            }
+         }
+         else
+         {
+            retVal &= m_dataMgmt->GetDataAttributes(i.key(), i.value(), data[i.key()]);
+         }
       }
 
       return retVal;

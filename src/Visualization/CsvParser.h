@@ -65,8 +65,7 @@ namespace Parser
       //! Signal indicating that the file parsing has completed.
       //! @param bSuccess  Indicates whether the file parsing was successful.
       //! @param sFileName Provides the file that was parsed.
-      void fileDone(bool bSuccess, QString sFileName);
-      void fileDone();
+      void fileDoneStatus(bool bSuccess, QString sFileName);
 
 
       //! Emits the range of progress increments that will be reported during

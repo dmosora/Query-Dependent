@@ -40,6 +40,9 @@ namespace Data
 
       //! Pops the next buffer from the queue.
       bool Dequeue( DataBuffer& buffer );
+
+      //! Returns the number of items in the queue.
+      int Size( ) const;
       
       //! Pulls off all buffers from the queue.
       bool PopAll( QList<DataBuffer>& list );

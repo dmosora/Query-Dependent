@@ -87,10 +87,17 @@ namespace Data
       //! make it available for data processing.
       void Commit(DataBuffer& buffer);
 
+
       //! Gets the column definitions that are currently available through this
       //! DataMgmt object.
       //! @param sFlightName  The name of the flight whose columns should be returned.
       const ColumnDefList& GetColumnDefinitions(const QString& sFlightName) const;
+
+      //! Provides a list of the currently loaded flights.
+      //! @param flights List that each flight name will be added.
+      //! @retval true  If the operation succeeds
+      //! @retval false Otherwise
+      bool GetLoadedFlights(QStringList& flights) const;
 
 
       //! Retrieves the data pertaining to the attributes selected by this object.
@@ -109,6 +116,22 @@ namespace Data
       //! Slot to handle an interrupt signal.  This will stop the data processing.
       void stopProcessing();
 
+   signals:
+      //! Signal sent when the last queue entry for a flight has been processed.
+      //! @param sFileName Provides the file that was parsed.
+      void FlightComplete(QString sFileName);
+
+      //! Emits the range of progress increments that will be reported during
+      //! parsing of the file by setCurrentProgress() signal.
+      //! @param min  First number reported as 0% progress.
+      //! @param max  Last number reports as 100% progress.
+      void setProgressRange(int min, int max);
+
+      //! Sets the current progress in parsing the file.
+      //! @param value  A number indicating a range of completeness from the min
+      //!               and max values emitted by setProgressRange().
+      void setCurrentProgress(int value);
+
    protected:
       //! The threaded functionality.
       void run();
@@ -120,6 +143,7 @@ namespace Data
       QString         m_sConnectionName; //!< Connection name for referencing the data
       Data::DataQueue m_queue;           //!< Queue containing parsed flight data
       bool            m_bStop;           //!< Flag indicating that parsing should stop
+      int             m_nProcessed;      //!< Running count of the buffers processed.
    };
 };
 

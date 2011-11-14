@@ -58,6 +58,7 @@ namespace Parser
       m_sFilename = sFilename;
       m_dataMgmt = dataMgmt;
       m_sFlightName = sFlightName;
+      m_buffer.sFlightName = sFlightName;
       m_mutex.unlock();
    }
 
@@ -109,7 +110,7 @@ namespace Parser
                   if( !m_dataMgmt->ProcessHeader( m_sFlightName, hdrTokens, tokens ) )
                   {
                      cerr << qPrintable(tr("Error extracting header information.")) << endl;
-                     emit( SIGNAL(fileDone(false, m_sFlightName)) );
+                     emit( fileDoneStatus(false, m_sFilename) );
                      return;
                   }
                }
@@ -119,28 +120,39 @@ namespace Parser
          // Read in the rest of the file.
          while( !line.isNull() )
          {
+            // Extract tokens from the current line.
             ExtractTokens( line, tokens );
-            m_dataMgmt->ProcessData( m_sFlightName, tokens, m_buffer );
-            line = stream.readLine();
-            llFilePos += line.length();
 
+            // Update progress.
             if( (llFilePos - (llFileInc*nLastProg)) > llFileInc )
             {
                // Calculate a progress increment
                ++nLastProg;
                emit( setCurrentProgress(nLastProg) );
             }
+
+            // Try to get the next line in order to determine if this is the 
+            // last line in the file
+            line = stream.readLine();
+            llFilePos += line.length();
+            m_buffer.bLastBuffer = line.isNull();
+
+            // Process the current data
+            m_dataMgmt->ProcessData( m_sFlightName, tokens, m_buffer );
          }
       }
 
       // Complete the data storage process.
-      m_dataMgmt->Commit(m_buffer);
+      if( m_buffer.data.size() )
+      {
+         m_buffer.bLastBuffer = true;
+         m_dataMgmt->Commit(m_buffer);
+      }
 
       // The file is done loading indicate 100% progress and notify the application
       // that the parsing is complete.
       emit( setCurrentProgress(nProgressIncrements) );
-      emit( SIGNAL(fileDone(true, m_sFlightName)) );
-      emit( SIGNAL(fileDone()) );
+      emit( fileDoneStatus(true, m_sFilename) );
    }
 
    void CsvParser::stopParse()

@@ -37,39 +37,6 @@ namespace Chart
 class TableEditor;
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// Threading test code
-#include <iostream>
-class MyObject : public QObject
-{
-   Q_OBJECT
-      public slots:
-         void MySlot( int increment )
-         {
-            std::cout << "slot called " << increment << std::endl;
-         }
-};
-
-class CThread1 : public QThread
-{
-   Q_OBJECT
-public:
-   void run( void )
-   {
-      std::cout << "thread 1 started" << std::endl;
-      int i = 0;
-      while(1)
-      {
-         msleep( 2000 );
-         emit MySignal(i++);
-      }
-   }
-signals:
-   void MySignal( int increment );
-};
-// End threading test code.
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 //! Represents the Main Window of the Information Visualization application.
 class Visualization : public QMainWindow
 {
@@ -91,8 +58,8 @@ protected slots:
    //! Slot to handle user selection of the File->Open action.
    void LoadFile();
 
-   //! Slot to handle enhanced status for a CSV parse.  This does not work.
-   void CsvFileStatus(bool bSuccess, QString sFilename);
+   //! Slot to handle enhanced status for a CSV parse.
+   void DatabaseStatus(QString sFlightName);
 
    //! Slot that handles the completion of a CSV file thread.
    void CsvFileDone();

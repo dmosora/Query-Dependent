@@ -48,6 +48,7 @@ namespace Data
    DataMgmt::DataMgmt( )
       : m_sConnectionName( "" )
       , m_bStop(false)
+      , m_nProcessed(0)
    {
    }
 
@@ -304,6 +305,17 @@ namespace Data
 
       return i.value();
    }
+   
+   bool DataMgmt::GetLoadedFlights(QStringList& flights) const
+   {      
+      FlightColumnMap::const_iterator i = m_columns.begin();
+      for( ; i != m_columns.end(); ++i )
+      {
+         flights.push_back( i.key() );
+      }
+
+      return true;
+   }
 
    bool DataMgmt::GetDataAttributes(
       const QString& sFlight,
@@ -314,7 +326,7 @@ namespace Data
 
       // Initialize the statistics data to calculate normalization and 
       // construct the query to retrieve data.
-      QString sQuery = "SELECT _zulu_time,";
+      QString sQuery = "SELECT Time_Hours,";
       Data::Metadata meta;
       meta._max = INT_MIN;
       meta._min = INT_MAX;
@@ -455,8 +467,18 @@ namespace Data
                }
             }
 
+            // Track progress.
+            ++m_nProcessed;
+            emit( setProgressRange(0, m_nProcessed+m_queue.Size()) );
+            emit( setCurrentProgress(m_nProcessed) );
+
             m_db.commit();
             m_mutex.unlock();
+
+            if( buffer.bLastBuffer )
+            {
+               emit( FlightComplete(buffer.sFlightName) );
+            }
          }
          else
          {
