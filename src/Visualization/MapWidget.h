@@ -2,7 +2,11 @@
 #define MAPWIDGET_H
 
 #include <QWidget>
+#include <QSlider>
+#include <QHBoxLayout>
 #include <QtWebkit/QGraphicsWebView>
+
+#include "LinkLabel.hpp"
 
 // This will help us draw and keep track of the plane icon.
 class AircraftOverlay
