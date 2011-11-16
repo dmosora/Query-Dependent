@@ -1,5 +1,7 @@
-#ifndef SLIDER_H
-#define SLIDER_H
+// Is this class supposed to hold a buffer of the frames needed to show?
+
+#ifndef TIMESLIDER_H
+#define TIMESLIDER_H
 
 #include <map>
 
@@ -9,14 +11,27 @@
 
 #include "LinkLabel.hpp"
 
-class CodeFile;
-class AttributeSpec;
-class LinkLabel;
-
-class TimeSlider
+class TimeSlider : public QWidget
 {
+Q_OBJECT
 public:
-    Slider();
+    TimeSlider();
+
+    // Do we need a time class to return?
+    double currentTime();
+
+public slots:
+    void onPlayToggled(bool value);
+    void onNextClicked();
+    void onPrevClicked();
+    void onFirstClicked();
+    void onLastClicked();
+    void onIndexChanged(int);
+
+private slots:
+    void moveTimeTo(double time);       // Might need changed if we make a time class
+    void advanceTime(int steps);
+    void incrementTime();
 
 private:
     QSlider*        _slider;
@@ -29,4 +44,4 @@ private:
     LinkLabel*      _last;
 };
 
-#endif // SLIDER_H
+#endif // TIMESLIDER_H

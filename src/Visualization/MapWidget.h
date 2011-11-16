@@ -13,6 +13,10 @@ class AircraftOverlay
 {
 public:
     AircraftOverlay() {}
+private:
+    // Coords of the top-left corner of the graphic
+    int _posX;
+    int _posY;
 };
 
 // This will set up the background map area with a url request to Google Maps' API

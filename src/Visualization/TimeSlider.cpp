@@ -1,5 +1,5 @@
-#include "Slider.h"
+#include "TimeSlider.h"
 
-Slider::Slider()
+TimeSlider::TimeSlider()
 {
 }
