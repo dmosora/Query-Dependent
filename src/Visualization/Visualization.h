@@ -18,6 +18,7 @@
 
 #include <QtGui/QMainWindow>
 #include <QDockWidget>
+#include <QGraphicsView>
 #include "ui_Visualization.h"
 
 #include "DataMgmt.h"
@@ -75,6 +76,7 @@ private:
 
    // UI elements for easier access
    MapWidget*      _map;
+   QGraphicsView   _mapview;
    QMdiSubWindow*  _subwindow;
    QMdiSubWindow*  _mapsubwindow;
 

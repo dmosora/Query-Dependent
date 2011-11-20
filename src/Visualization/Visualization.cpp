@@ -207,6 +207,8 @@ void Visualization::createVisualizationUI()
    _mapsubwindow->resize(DefaultWindowSize);
    _mapsubwindow->show();
 
+   // Make this add a GraphicsView instead of the widget
+
    //subwindow->resize(DefaultWindowSize);
    //subwindow->show();
    //subwindow->showMaximized();
@@ -215,7 +217,7 @@ void Visualization::createVisualizationUI()
 void Visualization::OnViewTable()
 {
    const Data::Selections& selections = m_attrSel.GetSelectedAttributes();
-   for( Data::Selections::iterator i = selections.begin(); i != selections.end(); ++i )
+   for( Data::Selections::const_iterator i = selections.begin(); i != selections.end(); ++i )
    {
       m_viewTable = new TableEditor(sConnectionName, i.key());
       m_viewTable->setObjectName(QString::fromUtf8("chart"));

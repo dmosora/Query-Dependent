@@ -4,11 +4,16 @@
 #include <QWidget>
 #include <QSlider>
 #include <QHBoxLayout>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGraphicsItem>
 #include <QtWebkit/QGraphicsWebView>
+#include <QUrl>
 
 #include "LinkLabel.hpp"
 
 // This will help us draw and keep track of the plane icon.
+// NOTE: This should be a QGraphicsItem for control with the GraphicsScene
 class AircraftOverlay
 {
 public:
@@ -41,12 +46,15 @@ class MapWidget : public QWidget
     Q_OBJECT
 public:
     explicit MapWidget(QWidget *parent = 0);
+    MapWidget(QGraphicsView* view, QWidget *parent = 0);
 
 signals:
 
 public slots:
 
 private:
+    QGraphicsScene* _scene;
+    QGraphicsView* _view;
     MapArea* _mapArea;
 };
 
