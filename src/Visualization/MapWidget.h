@@ -10,6 +10,8 @@
 #include <QtWebkit/QGraphicsWebView>
 #include <QUrl>
 
+#include <iostream>
+
 #include "LinkLabel.hpp"
 
 // This will help us draw and keep track of the plane icon.
@@ -41,6 +43,12 @@ private:
     double _url;
 };
 
+// The Architecture of this class is MapWidget controls the MapArea in a scene
+// - The Scene will hold all the drawing things, like the trail and plane
+// TODO:
+// - Needs logic to find coordinates in view and draw the plane
+// - Buffer system to load all previous points and build a path from past data
+// - More interaction with timeslider
 class MapWidget : public QWidget
 {
     Q_OBJECT
@@ -48,9 +56,15 @@ public:
     explicit MapWidget(QWidget *parent = 0);
     MapWidget(QGraphicsView* view, QWidget *parent = 0);
 
+    void setMapView(QGraphicsView* view);
+    void updateMap();
+
 signals:
 
 public slots:
+
+protected:
+    virtual void resizeEvent(QResizeEvent* event);
 
 private:
     QGraphicsScene* _scene;

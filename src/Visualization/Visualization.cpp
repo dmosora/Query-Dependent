@@ -203,11 +203,23 @@ void Visualization::DatabaseStatus(QString sFlightName)
 void Visualization::createVisualizationUI()
 {
    _map = new MapWidget(this);
+   _map->resize(ui.mdiArea->size());
+   _map->updateMap();
+
+   // Prepare the subwindow in the Mdi
    _mapsubwindow = ui.mdiArea->addSubWindow(_map);
-   _mapsubwindow->resize(DefaultWindowSize);
-   _mapsubwindow->show();
+   _mapsubwindow->resize(ui.mdiArea->size());
+   _mapsubwindow->setMaximumSize(533,533);
 
    // Make this add a GraphicsView instead of the widget
+   QGraphicsView* view = new QGraphicsView(_map);
+   view->setHorizontalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
+   view->setVerticalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
+   _map->setMapView(view);
+
+   // Show the views necessary
+   view->show();
+   _mapsubwindow->show();
 
    //subwindow->resize(DefaultWindowSize);
    //subwindow->show();

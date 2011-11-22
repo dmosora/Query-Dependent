@@ -9,35 +9,45 @@ MapArea::MapArea(QWidget *parent) :
 MapWidget::MapWidget(QWidget *parent) :
     QWidget(parent)
 {
-    // Make a test query so we can start gathering this data
-    // TODO: This is code copied from the query in Chart
-    //       It needs work when the database access is fixed
-    /*QSqlDatabase db = QSqlDatabase::database( m_sConnectionName );
-    QSqlQuery q(db);
-    QString sQuery = "SELECT * from " + m_sDataName;
-    if( !q.exec(sQuery) )
-    {
-            QSqlError err = q.lastError();
-            std::cerr << "Error querying table " << qPrintable(m_sDataName) << std::endl;
-            std::cerr << "   Error message: " << qPrintable( err.text() ) << std::endl;
-    }*/
+    setMaximumSize(533,533);
     _scene = new QGraphicsScene(this);
 
+    // Add the map the the scene
     _mapArea = new MapArea();
-    _mapArea->setUrl(QUrl(QString("http://maps.google.com/maps/api/staticmap?size=600x600&center=30.32608,-87.39843&visible=30.29182,-87.49922|30.35468,-87.31792&maptype=hybrid&sensor=false")));
-    _scene->addItem(_mapArea);
+    _mapArea->setMaximumSize(533,533);
+    //_mapArea->setResizesToContents(true);  // For some reason this looks weird
 
-    _view = new QGraphicsView(_scene);
-    _view->show();
+    // Get the map and put it in the MapArea
+    updateMap();
+
+    _scene->addItem(_mapArea);
 }
 
-MapWidget::MapWidget(QGraphicsView* view, QWidget* parent) {
-    _scene = new QGraphicsScene(this);
-
-    _mapArea = new MapArea();
-    _mapArea->setUrl(QUrl(QString("http://maps.google.com/maps/api/staticmap?size=600x600&center=30.32608,-87.39843&visible=30.29182,-87.49922|30.35468,-87.31792&maptype=hybrid&sensor=false")));
-    _scene->addItem(_mapArea);
-
+void MapWidget::setMapView(QGraphicsView* view)
+{
     _view = view;
     _view->setScene(_scene);
+    _view->setMaximumSize(533,533);
+}
+
+void MapWidget::updateMap()
+{
+    // Resize the map area when we change the view to fit the widget
+    _mapArea->resize(size());
+
+    // Get the image from Google Maps by constructing a url with current sizes
+    QString url("http://maps.google.com/maps/api/staticmap?size=");
+    url += QString::number(size().width());
+    url += "x";
+    url += QString::number(size().height());
+    url += "&center=30.32608,-87.39843&visible=30.29182,-87.49922|30.35468,-87.31792&maptype=hybrid&sensor=false";
+    //std::cerr << url.toStdString() << '\n';
+    _mapArea->setUrl(QUrl(url));
+}
+
+void MapWidget::resizeEvent(QResizeEvent* event)
+{
+    updateMap();
+    _mapArea->resize(size());
+    _view->resize(size());
 }
