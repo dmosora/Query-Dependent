@@ -40,7 +40,7 @@ namespace Data
    // This ends up being a performance switch.  The number is how many data rows
    // are added to a transaction before a commit is called.  A higher number may
    // improve the time it takes to add data to the database.
-   const int DataMgmt::nTransactionSwitch = 1000;
+   const int DataMgmt::nTransactionSwitch = 500;
 
 
    // ==========================================================================
@@ -56,6 +56,8 @@ namespace Data
    {
       stopProcessing();
       wait();
+
+      m_db.close();
    }
 
 
@@ -99,23 +101,15 @@ namespace Data
          return false;
       }
 
-      //! @todo Creating the header is unfortunately complicated because we
-      //!        have to commit everything first to avoid nested commits.  
-      //!        This extends the load time of the files in the beginning.
-      m_mutex.lock();
-      m_db.transaction();
-
+      Data::DataBuffer buffer;
+      buffer.sFlightName = sFlightName;
+      
       // If the database contains the indicated table already the procedure is
       // to delete it and recreate it from the data in the file being parsed.
       QSqlQuery q(m_db);
       QString sQuery = "DROP TABLE IF EXISTS ";
       sQuery.append( sFlightName );
-      if( !q.exec(sQuery) )
-      {
-         QSqlError err = q.lastError();
-         cerr << "Error creating table " << qPrintable(sFlightName) << endl;
-         cerr << "   Error message: " << qPrintable( err.text() ) << endl;
-      }
+      buffer.data.push_back( sQuery );
 
       // Construct the table based on information extracted from the CSV file.
       // The table is given an auto-incrementing ID.
@@ -185,15 +179,8 @@ namespace Data
       // query.  The string logic above just blindly places a comma after every value.
       sQuery.replace(sQuery.length()-1, 1, ')');
 
-      // Execute the query to create the data table.
-      if( !q.exec(sQuery) )
-      {
-         cerr << "Failed to create table " << qPrintable(sFlightName) << " for database " << qPrintable(m_sConnectionName) << endl;
-         cerr << "   Query: " << qPrintable(sQuery) << endl;
-         cerr << "   Error Message: " << qPrintable(q.lastError().text()) << endl;
-         m_db.rollback();
-         return false;
-      }
+      // Place the query in the buffer for processing.
+      buffer.data.push_back( sQuery );
 
       //! @todo Cache the column ColumnDef data in the database so that if
       //!       the same file is read in while a backing database is still 
@@ -202,10 +189,8 @@ namespace Data
       //! sQuery = "CREATE TABLE Columns(ID INTEGER PRIMARY KEY AUTOINCREMENT,
       //!                                FriendlyName VARCHAR(32), Type VARCHAR(16))";
 
-      // Commit the transaction.  i.e. Apply the SQL statements that have been 
-      // executed since the last call to db.transaction.
-      m_db.commit();
-      m_mutex.unlock();
+      // Enqueue the commands onto the buffer for processing.
+      m_queue.Enqueue( buffer );
 
       return true;
    }
@@ -427,6 +412,21 @@ namespace Data
 
       return true;
    }
+
+   
+   bool DataMgmt::SetEventData( QString sFlightName, const EventData& evtData )
+   {
+      //! @todo EventData should really be combined with an ability to replace
+      //!       based on the event definition.  For now, it's a replace.
+      m_evtDb[sFlightName] = evtData;
+
+      return true;
+   }
+
+   const EventDatabase& DataMgmt::GetEventData( ) const
+   {
+      return m_evtDb;
+   }
    
    
    // ==========================================================================
@@ -461,9 +461,12 @@ namespace Data
                // Execute the query and check for any error messages.
                if( !q.exec(buffer.data.at(i)) )
                {
-                  cerr << "Failed to execute data into table " << qPrintable(buffer.data.at(i));
-                  cerr << " for database " << qPrintable(m_sConnectionName) << endl;
+                  cerr << "------------------------------------------" << endl;
+                  cerr << "Query failed for database " << qPrintable(m_sConnectionName) << endl;
+                  cerr << "   Flight       : " << qPrintable(buffer.sFlightName) << endl;
+                  cerr << "   Query        : " << qPrintable(buffer.data.at(i));
                   cerr << "   Error Message: " << qPrintable(q.lastError().text()) << endl;
+                  cerr << "------------------------------------------" << endl;
                }
             }
 
@@ -484,7 +487,7 @@ namespace Data
          {
             // Give some time to allow the queue to populate but don't
             // hog all the processing time.
-            QThread::sleep( 2 );
+            QThread::msleep(500);
          }
       }
    }

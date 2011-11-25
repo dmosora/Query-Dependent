@@ -24,17 +24,6 @@
 
 namespace Event
 {
-   struct EventValue
-   {
-      QString      _eventName; //!< Name of the event
-      unsigned int _time;      //!< Time the event occurs from reference
-      unsigned int _sequence;  //!< Delta time before the landing event
-      QVariant     _value;     //!< Value of associated parameter
-   };
-   //! Event list containing multiple events associated with the same flight.
-   typedef QList<EventValue> EventData;
-
-
    //! Class to enable scripting in the application
    class EventDetector
    {
@@ -48,7 +37,10 @@ namespace Event
       //! @param[out] evtData The detected events
       //! @retval true  If the detection was successful
       //! @retval false Otherwise
-      bool DetectEvents( const QString& sFlightName, Data::DataMgmt* dataMgmt, EventData& evtData );
+      bool DetectEvents( 
+         const QString& sFlightName, 
+         Data::DataMgmt* dataMgmt, 
+         Data::EventData& evtData );
 
    };
 };

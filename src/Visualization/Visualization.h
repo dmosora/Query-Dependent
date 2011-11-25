@@ -71,7 +71,13 @@ protected slots:
    //! Slot that opens a new parallel coordinates.
    void OnViewParallelCoordinates();
 
+   //! Slot that opens a event glyph.
+   void OnViewEventGlyph();
+
 private:
+   //! Loads a single flight.
+   void LoadFlight( const QString& filename );
+
    Ui::VisualizationClass ui;  //!< Qt generated from the .ui file from Designer
 
    // UI elements for easier access
@@ -89,6 +95,8 @@ private:
    Chart::ParallelCoordinates *m_viewPC;    //!< Graphical depiction of the data
    TableEditor                *m_viewTable; //!< Database editing view.
 
+   QStringList     m_listFileNames;  //!< List of files to be opened.
+   unsigned int    m_nToComplete;    //!< Value to keep track of how many flights are yet to complete.
    unsigned int    m_nNextFlightNum; //!< Next number to assign for unique names.
 };
 

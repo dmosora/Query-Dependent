@@ -68,6 +68,7 @@
     <addaction name="separator"/>
     <addaction name="actionParallel_Coordinates"/>
     <addaction name="actionTable"/>
+    <addaction name="actionEvent_Glyph"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -160,6 +161,11 @@
   <action name="actionParallel_Coordinates">
    <property name="text">
     <string>Parallel Coordinates</string>
+   </property>
+  </action>
+  <action name="actionEvent_Glyph">
+   <property name="text">
+    <string>Event Glyph</string>
    </property>
   </action>
  </widget>

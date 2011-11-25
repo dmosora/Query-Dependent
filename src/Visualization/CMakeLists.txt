@@ -43,6 +43,8 @@ SET(VISUALIZATION_SRC
    DataProcessor.cpp
    DataNormalizer.cpp
    EventDetector.cpp
+   seansGlyphCode/EventGlyph.cpp
+   seansGlyphCode/RealTimeGlyph.cpp
    )
 
 # Only add headers that are for Qt.  This is what enables moc'ing.
@@ -54,7 +56,6 @@ SET(VISUALIZATION_HDR
    Chart_ParallelCoordinates.h
    DockWidgetAttributes.h
    MapWidget.h
-   EventDetector.h
    )
 
 SET(VISUALIZATION_FRM

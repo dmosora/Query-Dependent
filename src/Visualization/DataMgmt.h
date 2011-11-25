@@ -111,6 +111,14 @@ namespace Data
           const QStringList& attributes,
           Data::Buffer& data );
 
+      //! Adds the event data to the data management.
+      //! @param sFlightName  Name of the flight to which events will be added
+      //! @param evtData      Event data to add
+      bool SetEventData( QString sFlightName, const EventData& evtData );
+      
+      //! Provides access to the event database.
+      const EventDatabase& DataMgmt::GetEventData( ) const;
+
       
    public slots:
       //! Slot to handle an interrupt signal.  This will stop the data processing.
@@ -144,6 +152,8 @@ namespace Data
       Data::DataQueue m_queue;           //!< Queue containing parsed flight data
       bool            m_bStop;           //!< Flag indicating that parsing should stop
       int             m_nProcessed;      //!< Running count of the buffers processed.
+
+      EventDatabase   m_evtDb;           //! Event data mapped to each flight.
    };
 };
 

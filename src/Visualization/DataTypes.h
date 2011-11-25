@@ -96,6 +96,28 @@ namespace Data
       bool        bLastBuffer;
    };
 
+   
+   //! Structure to store the event data.
+   struct EventValue
+   {
+      QString      _eventName;   //!< Name of the event
+      int          _time;        //!< Time the event occurs from reference
+      int          _sequence;    //!< Delta time before the landing event
+      QVariant     _value;       //!< Value of associated parameter
+      QVariant     _valueNormal; //!< Value of associated parameter
+   };
+
+   //! Event list containing multiple events associated with the same flight.
+   typedef QList<EventValue> EventData;
+   //! Type definition for an EventData iterator
+   typedef QListIterator<EventValue> EventDataIterator;
+
+   //! Event map containing the events associated with the flight.  Temporary
+   //! storage structure until the data can be saved in the database.
+   typedef QMap<QString,EventData> EventDatabase;
+   //! Iterator type definition for the event database.
+   typedef QMapIterator<QString,EventData> EventDatabaseIterator;
+
 };
 
 #endif // _DATATYPES_H_
