@@ -21,6 +21,7 @@
 
 #include "EventDetector.h"
 
+#define PRINT_EVENTS
 
 namespace Event
 {

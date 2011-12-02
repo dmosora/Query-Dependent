@@ -31,7 +31,7 @@
 #include "EventDetector.h"
 #include "TableEditor.h"
 #include "Chart_ParallelCoordinates.h"
-#include "seansGlyphCode\EventGlyph.h"
+#include "seansGlyphCode/EventGlyph.h"
 #include "Visualization.h"
 
 

@@ -1,4 +1,4 @@
-#include "mapwidget.h"
+#include "MapWidget.h"
 
 MapArea::MapArea(QWidget *parent) :
     QGraphicsWebView()

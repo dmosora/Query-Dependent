@@ -7,7 +7,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QGraphicsItem>
-#include <QtWebkit/QGraphicsWebView>
+#include <QGraphicsWebView>
 #include <QUrl>
 
 #include <iostream>

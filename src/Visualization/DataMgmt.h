@@ -117,7 +117,7 @@ namespace Data
       bool SetEventData( QString sFlightName, const EventData& evtData );
       
       //! Provides access to the event database.
-      const EventDatabase& DataMgmt::GetEventData( ) const;
+      const EventDatabase& GetEventData( ) const;
 
       
    public slots:
