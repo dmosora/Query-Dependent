@@ -9,6 +9,9 @@ MapArea::MapArea(QWidget *parent) :
 MapWidget::MapWidget(QWidget *parent) :
     QWidget(parent)
 {
+    // This needs to be changed to use a static map with defined coordinates
+    // That way we can rely on the positioning of our visual elements.
+
     setMaximumSize(533,533);
     _scene = new QGraphicsScene(this);
 

@@ -85,6 +85,9 @@ private:
    QGraphicsView   _mapview;
    QMdiSubWindow*  _subwindow;
    QMdiSubWindow*  _mapsubwindow;
+   QVBoxLayout*    _mapAndSlider;
+   QWidget*        _mdiMapWidget;
+   TimeSlider*     _toolbar;
 
    Parser::CsvParser     m_csvParser; //!< Class to parse CSV files
    Data::DataMgmt        m_dataMgmt;  //!< Abstraction of the data management

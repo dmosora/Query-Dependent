@@ -7,11 +7,13 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QGraphicsItem>
-#include <QGraphicsWebView>
+#include <QtWebkit/QGraphicsWebView>
 #include <QUrl>
+
 
 #include <iostream>
 
+#include "TimeSlider.h"
 #include "LinkLabel.hpp"
 
 // This will help us draw and keep track of the plane icon.
@@ -24,9 +26,13 @@ private:
     // Coords of the top-left corner of the graphic
     int _posX;
     int _posY;
+
+    QPixmap* _image;
 };
 
 // This will set up the background map area with a url request to Google Maps' API
+// NOTE: This must be changed to a static image instead of the request.
+//       Need to use Javascript to get the actual pixel coordinates.
 class MapArea : public QGraphicsWebView
 {
 public:
@@ -68,8 +74,9 @@ protected:
 
 private:
     QGraphicsScene* _scene;
-    QGraphicsView* _view;
-    MapArea* _mapArea;
+    QGraphicsView*  _view;
+    MapArea*        _mapArea;
+    //TimeSlider*     _toolbar;     // Now in Visualization.h
 };
 
 #endif // MAPWIDGET_H

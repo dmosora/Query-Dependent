@@ -246,8 +246,21 @@ void Visualization::createVisualizationUI()
    _map->resize(ui.mdiArea->size());
    _map->updateMap();
 
+   // Make the time slider for this
+   _toolbar = new TimeSlider(this);
+   _toolbar->setMovable(false);
+
+   // Organize them in a layout and make the mdi widget
+   _mapAndSlider = new QVBoxLayout(this);
+   _mapAndSlider->addWidget(_toolbar);
+   _mapAndSlider->addWidget(_map);
+
+   _mdiMapWidget = new QWidget(this);
+   _mdiMapWidget->setLayout(_mapAndSlider);
+
    // Prepare the subwindow in the Mdi
-   _mapsubwindow = ui.mdiArea->addSubWindow(_map);
+   //_mapsubwindow = ui.mdiArea->addSubWindow(_map);
+   _mapsubwindow = ui.mdiArea->addSubWindow(_mdiMapWidget);
    _mapsubwindow->resize(ui.mdiArea->size());
    _mapsubwindow->setMaximumSize(533,533);
 

@@ -36,6 +36,8 @@ SET(VISUALIZATION_SRC
    TableEditor.cpp
    Chart_ParallelCoordinates.cpp
    MapWidget.cpp
+   TimeSlider.cpp
+   LinkLabel.cpp
    DataTypes.cpp
    DataMgmt.cpp
    DataQueue.cpp
@@ -56,6 +58,8 @@ SET(VISUALIZATION_HDR
    Chart_ParallelCoordinates.h
    DockWidgetAttributes.h
    MapWidget.h
+   TimeSlider.h
+   LinkLabel.hpp
    )
 
 SET(VISUALIZATION_FRM

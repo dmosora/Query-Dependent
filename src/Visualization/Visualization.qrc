@@ -1,8 +1,23 @@
 <RCC>
-  <qresource prefix="/Visualization">
-    <file>images/main_icon.png</file>
-    <file>images/file_new.png</file>
-    <file>images/file_open.png</file>
-    <file>images/file_save.png</file>
-  </qresource>
+    <qresource prefix="/Visualization">
+        <file>images/main_icon.png</file>
+        <file>images/file_new.png</file>
+        <file>images/file_open.png</file>
+        <file>images/file_save.png</file>
+        <file>images/plane_left.png</file>
+        <file>images/plane_right.png</file>
+        <file>images/first_down.png</file>
+        <file>images/first_up.png</file>
+        <file>images/last_down.png</file>
+        <file>images/last_up.png</file>
+        <file>images/next_down.png</file>
+        <file>images/next_up.png</file>
+        <file>images/pause_down.png</file>
+        <file>images/pause_up.png</file>
+        <file>images/play_down.png</file>
+        <file>images/play_up.png</file>
+        <file>images/prev_down.png</file>
+        <file>images/prev_up.png</file>
+        <file>images/map.png</file>
+    </qresource>
 </RCC>
