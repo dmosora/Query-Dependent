@@ -244,7 +244,7 @@ void Visualization::createVisualizationUI()
 {
    _map = new MapWidget(this);
    _map->resize(ui.mdiArea->size());
-   _map->updateMap();
+   //_map->updateMap();                 // Dynamic map ONLY
 
    // Make the time slider for this
    _toolbar = new TimeSlider(this);
@@ -261,8 +261,9 @@ void Visualization::createVisualizationUI()
    // Prepare the subwindow in the Mdi
    //_mapsubwindow = ui.mdiArea->addSubWindow(_map);
    _mapsubwindow = ui.mdiArea->addSubWindow(_mdiMapWidget);
-   _mapsubwindow->resize(ui.mdiArea->size());
-   _mapsubwindow->setMaximumSize(533,533);
+   _mapsubwindow->resize(607,550);
+   _mapsubwindow->setMaximumSize(_mapsubwindow->size());
+   _mapsubwindow->setMinimumSize(_mapsubwindow->size());
 
    // Make this add a GraphicsView instead of the widget
    QGraphicsView* view = new QGraphicsView(_map);
@@ -273,7 +274,7 @@ void Visualization::createVisualizationUI()
    // Show the views necessary
    view->show();
    _mapsubwindow->show();
-
+   //std::cerr << "does it make it here\n";
    //subwindow->resize(DefaultWindowSize);
    //subwindow->show();
    //subwindow->showMaximized();

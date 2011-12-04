@@ -33,6 +33,7 @@ private:
 // This will set up the background map area with a url request to Google Maps' API
 // NOTE: This must be changed to a static image instead of the request.
 //       Need to use Javascript to get the actual pixel coordinates.
+/// Disabled until necessary for dynamic maps with Google's API
 class MapArea : public QGraphicsWebView
 {
 public:
@@ -41,12 +42,12 @@ public:
 public slots:
 
 private:
-    double _latStart;
-    double _lonStart;
-    double _latEnd;
-    double _lonEnd;
+    double          _latStart;
+    double          _lonStart;
+    double          _latEnd;
+    double          _lonEnd;
 
-    double _url;
+    double          _url;
 };
 
 // The Architecture of this class is MapWidget controls the MapArea in a scene
@@ -74,9 +75,16 @@ protected:
 
 private:
     QGraphicsScene* _scene;
-    QGraphicsView*  _view;
+    QGraphicsView*  _view;          // The view in which this map is contained in the MDI
     MapArea*        _mapArea;
     //TimeSlider*     _toolbar;     // Now in Visualization.h
+
+    QPixmap*        _picMap;        // For static map
+
+    double          _latStart;
+    double          _lonStart;
+    double          _latEnd;
+    double          _lonEnd;
 };
 
 #endif // MAPWIDGET_H
