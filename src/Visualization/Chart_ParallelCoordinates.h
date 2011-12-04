@@ -45,11 +45,11 @@ namespace Chart
 
       int                   m_nHeight;         //!< Previous height the coordinates were drawn
       int                   m_nWidth;          //!< Previous width the coordinates were drawn
-	  int                   m_nNumAttrs;       //!< Number of attributes 
+      int                   m_nNumAttrs;       //!< Number of attributes 
       Data::DataSelections* m_selections;      //!< User selected parameters
       Data::FlightDatabase  m_data;            //!< Buffer of data used by the chart
 
-	  QPixmap*              m_chart;  //!< Area the chart is drawn in.
+      QPixmap*              m_chart;  //!< Area the chart is drawn in.
    };
 };
 

@@ -98,13 +98,18 @@ namespace Data
 
    
    //! Structure to store the event data.
-   struct EventValue
+   class EventValue
    {
+   public:
+      EventValue();
+
       QString      _eventName;   //!< Name of the event
+      QString      _eventDesc;   //!< Description of the event
       int          _time;        //!< Time the event occurs from reference
       int          _sequence;    //!< Delta time before the landing event
       QVariant     _value;       //!< Value of associated parameter
-      QVariant     _valueNormal; //!< Value of associated parameter
+      QVariant     _valueNormal; //!< Normalized value of associated parameter
+      bool         _bFound;      //!< True if the event was found
    };
 
    //! Event list containing multiple events associated with the same flight.

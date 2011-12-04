@@ -63,7 +63,7 @@ namespace Data
 
 	  //! Populates the provided data buffer with the selected attributes.
 	  //! @param data Data buffer to be populated.
-	  bool GetDataAttributes(Data::FlightDatabase& data);
+	  bool GetDataAttributes(Data::FlightDatabase& data) const;
 
    protected:
       DataMgmt*   m_dataMgmt;    //!< Object used to access data.

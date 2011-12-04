@@ -490,6 +490,8 @@ namespace Data
             QThread::msleep(500);
          }
       }
+
+      m_bStop = false; // In case the thread needs restarted.
    }
 
    void DataMgmt::stopProcessing()
