@@ -46,18 +46,18 @@ namespace Chart
       : QWidget(parent)
       , m_nHeight(0)
       , m_nWidth(0)
-	  , m_nNumAttrs(0)
+      , m_nNumAttrs(0)
       , m_selections(selections)
-	  , m_chart(0)
+      , m_chart(0)
    {
       // We must have selections to work.
       Q_ASSERT(m_selections);
 
-	  
-	  // This is a performance optimization..
-	  this->setAttribute(Qt::WA_OpaquePaintEvent);
 
-	  
+      // This is a performance optimization..
+      this->setAttribute(Qt::WA_OpaquePaintEvent);
+
+
       if( m_selections )
       {
 
@@ -65,7 +65,7 @@ namespace Chart
 
          // Retrieve and process the data.
          m_selections->GetDataAttributes( m_data );
-			
+
          Data::FlightDatabase::iterator i;
          for( i = m_data.begin() ; i != m_data.end(); ++i )
          {
@@ -77,7 +77,7 @@ namespace Chart
                std::cerr << qPrintable(i.key()) << "." << std::endl;
             }
          }
-	  }
+      }
    }
 
    ParallelCoordinates::~ParallelCoordinates()
@@ -90,20 +90,20 @@ namespace Chart
       // ------------------------------------------------------------------------
       // ------------------------------------------------------------------------
       QPainter thisPainter(this);
-	  
+
       int w = thisPainter.viewport().width();
       int h = thisPainter.viewport().height();
       if( (abs(m_nHeight-h) > 0 || abs(m_nWidth-w) > 0) && m_data.size() > 0 )
       {
          m_nHeight = h;
-		 m_nWidth  = w;
+         m_nWidth  = w;
 
          delete m_chart;
-		 m_chart = new QPixmap(w, h);
+         m_chart = new QPixmap(w, h);
 
          QPainter painter(m_chart);
 
-		 // Draw the background.
+         // Draw the background.
          QPoint background[4] = { QPoint(0,0), QPoint(0,h), QPoint(w,h), QPoint(w,0) };
          QBrush brush(QColor(20,128,230));
          QBrush oldBrush = painter.brush();
@@ -113,26 +113,26 @@ namespace Chart
          painter.setPen(Qt::green);
 
          Data::FlightDatabase::iterator i;
-		 int nFlights = m_data.size();
-		 int nFlightNum = -1;
+         int nFlights = m_data.size();
+         int nFlightNum = -1;
          int nLineLength  = h/(nFlights);
          for( i = m_data.begin() ; i != m_data.end(); ++i )
-		 {
+         {
             painter.setPen(Qt::green);
-			++nFlightNum;
+            ++nFlightNum;
 
             int nAttr = i.value()._metadata.size();
-		    if( nAttr > 1 )
+            if( nAttr > 1 )
             {
 #              ifdef NDEBUG
-			      // This makes the drawing VERY slow!!!
-                  //painter.setRenderHint(QPainter::Antialiasing);
+               // This makes the drawing VERY slow!!!
+               //painter.setRenderHint(QPainter::Antialiasing);
 #              endif
-         
+
                this->setStyleSheet("QWidget { background-color: blue; }");
-		 
+
                QPoint *points = new QPoint[nAttr];
-			   
+
                // Calculate the chart parameters.
                int nLineSpacing = w/(nAttr-1);
                int xoffset = 0;
@@ -140,7 +140,7 @@ namespace Chart
                int xIncrements = 0;
                int yIncrements = 0;
                bool success = false;
-               for( int g =  0; g < i.value()._params.size(); ++g )
+               for( int g =  0; g < i.value()._params.size(); g+=10 )
                {
                   int pt = 0;
                   int x = xoffset;
@@ -157,10 +157,10 @@ namespace Chart
                      x += nLineSpacing;
                   }
 
-               painter.drawPolyline(points, nAttr);
+                  painter.drawPolyline(points, nAttr);
                }
 
-		       // Draw the actual parallel coordinates last so they are visible on top.
+               // Draw the actual parallel coordinates last so they are visible on top.
                painter.setPen(Qt::black);
                for( int m = 0; m < nAttr; ++m )
                {
@@ -168,35 +168,35 @@ namespace Chart
                   painter.drawLine( x, yoffset, x, yoffset-nLineLength);
                }
                painter.drawLine
-				   ( xoffset, yoffset
-				   , xoffset+(nLineSpacing*nAttr), yoffset);
+                  ( xoffset, yoffset
+                  , xoffset+(nLineSpacing*nAttr), yoffset);
                painter.drawLine
-				   ( xoffset, yoffset+nLineLength
-				   , xoffset+(nLineSpacing*nAttr), yoffset+nLineLength);
+                  ( xoffset, yoffset+nLineLength
+                  , xoffset+(nLineSpacing*nAttr), yoffset+nLineLength);
 
-			   delete points;
+               delete points;
             }
-		 }
-	  }
+         }
+      }
 
       if( m_chart )
       {
          // Draw the pixmap to the widget.
          thisPainter.drawPixmap(m_chart->rect(), *m_chart);
       }
-//      else
-//      {
-//         // QStaticText isn't available until 4.7
-//#        if QT_VERSION >= 0x040700
-//            // Draw some reminder text for now on how to get the chart to work.
-//            QStaticText message;
-//
-//            message.setText(
-//               "Parallel coordinates requires loading data and selecting at least two attributes.\n"
-//               "Make sure data is loaded, select two attributes and then re-launch the chart.");
-//
-//            painter.drawStaticText( 0, 0, message );
-//#        endif
-//      }
+      //      else
+      //      {
+      //         // QStaticText isn't available until 4.7
+      //#        if QT_VERSION >= 0x040700
+      //            // Draw some reminder text for now on how to get the chart to work.
+      //            QStaticText message;
+      //
+      //            message.setText(
+      //               "Parallel coordinates requires loading data and selecting at least two attributes.\n"
+      //               "Make sure data is loaded, select two attributes and then re-launch the chart.");
+      //
+      //            painter.drawStaticText( 0, 0, message );
+      //#        endif
+      //      }
    }
 };

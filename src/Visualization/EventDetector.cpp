@@ -21,7 +21,9 @@
 
 #include "EventDetector.h"
 
-#define PRINT_EVENTS
+using namespace Data;
+
+//#define PRINT_EVENTS
 
 namespace Event
 {
@@ -54,7 +56,7 @@ namespace Event
 
       return (value - min) / (max - min);
    }
-   
+ 
    bool EventDetector::DetectEvents( 
       const QString& sFlightName, 
       Data::DataMgmt* dataMgmt, 
@@ -72,16 +74,52 @@ namespace Event
       dataSel.GetDataAttributes(data);
 
       Data::EventValue evt;
-
-      bool bFe40Found    = false;
-      bool bFe100Found   = false;
-      bool bLgFound      = false;
-      bool bThreshFound  = false;
-      bool bLandingFound = false;
-
+      
       bool bPotentialLanding = false;
       int          nLandingTime;
       double       fLandingIAS;
+
+      for( int i = 0; i < nNumEvents; ++i )
+      {
+         switch( i )
+         {
+         case nVFe40:
+            evt._eventName   = "VFe40";
+            evt._eventDesc   = "Flap Extension 40% (IAS)";
+            evt._sequence    = 1;
+            break;
+         case VLg:
+            evt._eventName   = "VLg";
+            evt._eventDesc   = "Landing Gear Extension (IAS)";
+            evt._sequence    = 2;
+            break;
+         case VFe100:
+            evt._eventName   = "VFe100";
+            evt._eventDesc   = "Flap Extension 100% (IAS)";
+            evt._sequence    = 3;
+            break;
+         case VThrshld:
+            evt._eventName   = "VThrshld";
+            evt._eventDesc   = "Runway Threshold (IAS)";
+            evt._sequence    = 4;
+            break;
+         case AltThrshld:
+            evt._eventName   = "AltThrshld";
+            evt._eventDesc   = "Runway Threshold (Alt)";
+            evt._sequence    = 4;
+            break;
+         case VTouchdown:
+            evt._eventName   = "VTouchdown";
+            evt._eventDesc   = "Landing (IAS)";
+            evt._sequence    = 4; // landing is a zero reference.
+            break;
+         default:
+            evt._eventName   = "Unknown";
+            evt._eventDesc   = "This is not a real event, something went wrong.";
+         }
+         
+         evtData.push_back(evt);
+      }
       
       QMap<int, int> eventTimes;
       Data::FlightDatabase::iterator i = data.begin();
@@ -91,105 +129,68 @@ namespace Event
          {
             const Data::Point& p = i.value()._params.at(j);
          
-            if( ! bFe40Found && p._dataVector.at(FlapHdlIdx).toDouble() > 0.5 )
+            if( !evtData[nVFe40]._bFound && p._dataVector.at(FlapHdlIdx).toDouble() > 0.5 )
             {
-               bFe40Found = true;
-
-               evt._eventName   = "Flap Extension 40% (IAS)     ";
-               evt._time        = p._time;
-               evt._value       = p._dataVector.at(IASIdx).toDouble();
-               evt._valueNormal = Normalize
+               evtData[nVFe40]._bFound      = true;
+               evtData[nVFe40]._time        = p._time;
+               evtData[nVFe40]._value       = p._dataVector.at(IASIdx).toDouble();
+               evtData[nVFe40]._valueNormal = Normalize
                   ( p._dataVector.at(IASIdx).toDouble()
                   , i.value()._metadata.at(IASIdx)._min
                   , i.value()._metadata.at(IASIdx)._max );
-               evt._sequence    = 1;
-               evtData.push_back(evt);
                
                eventTimes[0] = p._time;
             }
             
-            if( ! bFe100Found && p._dataVector.at(FlapHdlIdx).toDouble() == 1 )
+            if( !evtData[VLg]._bFound && p._dataVector.at(GearIdx).toDouble() > 0.5 )
             {
-               bFe100Found = true;
-
-               evt._eventName   = "Flap Extension 100% (IAS)    ";
-               evt._time        = p._time;
-               evt._value       = p._dataVector.at(IASIdx).toDouble();
-               evt._valueNormal = Normalize
+               evtData[VLg]._bFound      = true;
+               evtData[VLg]._time        = p._time;
+               evtData[VLg]._value       = p._dataVector.at(IASIdx).toDouble();
+               evtData[VLg]._valueNormal = Normalize
                   ( p._dataVector.at(IASIdx).toDouble()
                   , i.value()._metadata.at(IASIdx)._min
                   , i.value()._metadata.at(IASIdx)._max );
-               evt._sequence    = 3;
-               evtData.push_back(evt);
-               
-               eventTimes[2] = p._time;
-            }
-            
-            if( ! bLgFound && p._dataVector.at(GearIdx).toDouble() > 0.5 )
-            {
-               bLgFound = true;
-
-               evt._eventName   = "Landing Gear Extension (IAS) ";
-               evt._time        = p._time;
-               evt._value       = p._dataVector.at(IASIdx).toDouble();
-               evt._valueNormal = Normalize
-                  ( p._dataVector.at(IASIdx).toDouble()
-                  , i.value()._metadata.at(IASIdx)._min
-                  , i.value()._metadata.at(IASIdx)._max );
-               evt._sequence    = 2;
-               evtData.push_back(evt);
                
                eventTimes[1] = p._time;
             }
             
-            if( ! bThreshFound && p._dataVector.at(OnRunwayIdx).toDouble() > 0.5 )
+            if( !evtData[VFe100]._bFound && p._dataVector.at(FlapHdlIdx).toDouble() == 1 )
             {
-               bThreshFound = true;
-
-               evt._eventName   = "Runway Threshold (IAS)       ";
-               evt._time        = p._time;
-               evt._value       = p._dataVector.at(IASIdx).toDouble();
-               evt._valueNormal = Normalize
+               evtData[VFe100]._bFound      = true;
+               evtData[VFe100]._time        = p._time;
+               evtData[VFe100]._value       = p._dataVector.at(IASIdx).toDouble();
+               evtData[VFe100]._valueNormal = Normalize
                   ( p._dataVector.at(IASIdx).toDouble()
                   , i.value()._metadata.at(IASIdx)._min
                   , i.value()._metadata.at(IASIdx)._max );
-               evt._sequence    = 4;
-               evtData.push_back(evt);
-
-               evt._eventName   = "Runway Threshold (Alt)       ";
-               evt._time        = p._time+1; //!@todo Remove the plus 1
-               evt._value       = p._dataVector.at(AltAglIdx).toDouble();
-               evt._valueNormal = Normalize
+               
+               eventTimes[2] = p._time;
+            }
+            
+            if( !evtData[VThrshld]._bFound && p._dataVector.at(OnRunwayIdx).toDouble() > 0.5 )
+            {
+               evtData[VThrshld]._bFound      = true;
+               evtData[VThrshld]._time        = p._time;
+               evtData[VThrshld]._value       = p._dataVector.at(IASIdx).toDouble();
+               evtData[VThrshld]._valueNormal = Normalize
+                  ( p._dataVector.at(IASIdx).toDouble()
+                  , i.value()._metadata.at(IASIdx)._min
+                  , i.value()._metadata.at(IASIdx)._max );
+               
+               evtData[AltThrshld]._bFound      = true;
+               evtData[AltThrshld]._time        = p._time+1; //!@todo Remove the plus 1
+               evtData[AltThrshld]._value       = p._dataVector.at(AltAglIdx).toDouble();
+               evtData[AltThrshld]._valueNormal = Normalize
                   ( p._dataVector.at(AltAglIdx).toDouble()
                   , i.value()._metadata.at(AltAglIdx)._min
                   , i.value()._metadata.at(AltAglIdx)._max );
-               evt._sequence    = 4;
-               evtData.push_back(evt);
                
                eventTimes[3] = p._time;
             }
             
-            if( ! bLgFound && p._dataVector.at(GearIdx).toDouble() > 0.5 )
+            if( !evtData[VTouchdown]._bFound && p._dataVector.at(AltAglIdx).toDouble() < 1.0 )
             {
-               bLgFound = true;
-
-               evt._eventName   = "Landing Gear Extension (IAS) ";
-               evt._time        = p._time;
-               evt._value       = p._dataVector.at(IASIdx).toDouble();
-               evt._valueNormal = Normalize
-                  ( p._dataVector.at(IASIdx).toDouble()
-                  , i.value()._metadata.at(IASIdx)._min
-                  , i.value()._metadata.at(IASIdx)._max );
-               evt._sequence  = 4;
-               evtData.push_back(evt);
-               
-               eventTimes[0] = p._time;
-            }
-            
-            if( ! bLandingFound && p._dataVector.at(AltAglIdx).toDouble() < 1.0 )
-            {
-               bLgFound = true;
-
                if( !bPotentialLanding )
                {
                   // This is the beginning of a potential landing event.  
@@ -202,17 +203,13 @@ namespace Event
                else if( static_cast<unsigned int>(nLandingTime+150000) > p._time )
                {
                   // Landing condition must hold for 15 seconds to be true.
-                  bLandingFound = true;
-
-                  evt._eventName   = "Landing (IAS)                ";
-                  evt._time        = nLandingTime;
-                  evt._value       = fLandingIAS;
-                  evt._valueNormal = Normalize
+                  evtData[VTouchdown]._bFound      = true;
+                  evtData[VTouchdown]._time        = nLandingTime;
+                  evtData[VTouchdown]._value       = fLandingIAS;
+                  evtData[VTouchdown]._valueNormal = Normalize
                      ( fLandingIAS
                      , i.value()._metadata.at(IASIdx)._min
                      , i.value()._metadata.at(IASIdx)._max );
-                  evt._sequence    = 4;
-                  evtData.push_back(evt);
                
                   eventTimes[4] = nLandingTime;
                }

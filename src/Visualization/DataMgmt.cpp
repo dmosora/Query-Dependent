@@ -50,6 +50,37 @@ namespace Data
       , m_bStop(false)
       , m_nProcessed(0)
    {
+      //! @todo This should really be done by the Event Detector but what 
+      //!       really needs to happen is that the event detector needs to be 
+      //!       integrated into the data management a little better or the 
+      //!       events removed from data management altogether.
+
+      // Max values for the events
+      m_evtDb._maxValues.resize(nNumEvents);
+      m_evtDb._maxValues[nVFe40]     = 200;
+      m_evtDb._maxValues[VLg]        = 181; // Audio said 160
+      m_evtDb._maxValues[VFe100]     = 146;
+      m_evtDb._maxValues[VThrshld]   = 108;
+      m_evtDb._maxValues[AltThrshld] = 65;
+      m_evtDb._maxValues[VTouchdown] = 69;
+
+      // Min values for the events
+      m_evtDb._minValues.resize(nNumEvents);
+      m_evtDb._minValues[nVFe40]     = 140;
+      m_evtDb._minValues[VLg]        = 140;
+      m_evtDb._minValues[VFe100]     = 140;
+      m_evtDb._minValues[VThrshld]   = 103;
+      m_evtDb._minValues[AltThrshld] = 45;
+      m_evtDb._minValues[VTouchdown] = 64;
+
+      // Min values for the events
+      m_evtDb._labels.resize(nNumEvents);
+      m_evtDb._labels[nVFe40]     = "VFe40";
+      m_evtDb._labels[VLg]        = "VLg";
+      m_evtDb._labels[VFe100]     = "VFe100";
+      m_evtDb._labels[VThrshld]   = "VThrshld";
+      m_evtDb._labels[AltThrshld] = "AltThrshld";
+      m_evtDb._labels[VTouchdown] = "VTouchdown";
    }
 
    DataMgmt::~DataMgmt()
@@ -418,7 +449,7 @@ namespace Data
    {
       //! @todo EventData should really be combined with an ability to replace
       //!       based on the event definition.  For now, it's a replace.
-      m_evtDb[sFlightName] = evtData;
+      m_evtDb._events[sFlightName] = evtData;
 
       return true;
    }
@@ -490,6 +521,8 @@ namespace Data
             QThread::msleep(500);
          }
       }
+
+      m_bStop = false; // In case the thread needs restarted.
    }
 
    void DataMgmt::stopProcessing()

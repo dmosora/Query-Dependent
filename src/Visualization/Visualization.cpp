@@ -42,7 +42,6 @@ const QSize DefaultWindowSize(400,300);
 using namespace std;
 
 
-
 Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
    : QMainWindow(parent, flags)
    , _map(0)
@@ -134,6 +133,7 @@ void Visualization::LoadFlight( const QString& filename )
    // Prepare to process the data from the queue.
    if( !m_dataMgmt.isRunning() )
    {
+      //cout << "Starting data management thread." << endl;
       m_dataMgmt.start();
    }
 
@@ -234,7 +234,7 @@ void Visualization::DatabaseStatus(QString sFlightName)
 
    if( m_nToComplete == 0 )
    {
-      cout << "Flight processing complete. Stopping data management thread." << endl;
+      //cout << "Flight processing complete. Stopping data management thread." << endl;
       m_dataMgmt.stopProcessing();
    }
 }
@@ -318,15 +318,14 @@ void split_str(const std::string& str, std::vector<float>& vec, const char& spli
 			i=j;
 	}
 }
+
 void Visualization::OnViewEventGlyph()
 {
-   EventGlyph* event_glyph = new EventGlyph(700, 700, 171);
-   event_glyph->SetAttributeNumber(6);
+   EventGlyph* event_glyph = new EventGlyph(DefaultWindowSize.width(), DefaultWindowSize.height(), 6);
 
-   std::vector<float> data;
-   
    const Data::EventDatabase& evtDb = m_dataMgmt.GetEventData();
-   Data::EventDatabaseIterator iDb(evtDb);
+   std::vector<float> data;
+   Data::EventContainerIterator iDb(evtDb._events);
    while( iDb.hasNext() )
    {
       iDb.next();

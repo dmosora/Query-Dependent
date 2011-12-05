@@ -70,7 +70,7 @@ namespace Data
       return m_selections;
    }
 
-   bool DataSelections::GetDataAttributes(Data::FlightDatabase& data)
+   bool DataSelections::GetDataAttributes(Data::FlightDatabase& data) const
    {
       if( !m_dataMgmt )
       {
@@ -83,7 +83,7 @@ namespace Data
       data.clear();
 
       // Iterate over all of the selections and query each flight.
-      Selections::iterator i;
+      Selections::const_iterator i;
       for( i = m_selections.begin() ; i != m_selections.end(); ++i )
       {
          if( i.key() == WilcardFlight )
