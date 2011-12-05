@@ -17,6 +17,8 @@
 #ifndef _DATATYPES_H_
 #define _DATATYPES_H_
 
+#include <vector>
+
 #include <QString>
 #include <QVariant>
 #include <QStringList>
@@ -119,9 +121,31 @@ namespace Data
 
    //! Event map containing the events associated with the flight.  Temporary
    //! storage structure until the data can be saved in the database.
-   typedef QMap<QString,EventData> EventDatabase;
+   typedef QMap<QString,EventData> EventContainer;
    //! Iterator type definition for the event database.
-   typedef QMapIterator<QString,EventData> EventDatabaseIterator;
+   typedef QMapIterator<QString,EventData> EventContainerIterator;
+   //! Type definition for min and max threshold ranges
+   typedef std::vector<float> EventDefinitionValues;
+   //! Type definition for min and max threshold ranges
+   typedef std::vector<std::string> EventDefinitionLabels;
+
+   class EventDatabase
+   {
+   public:
+      EventContainer        _events;     //!< Actual event data
+      EventDefinitionValues _maxValues;  //!< Max values for the events
+      EventDefinitionValues _minValues;  //!< Min values for the events
+      EventDefinitionLabels _labels;     //!< Labels for the event definitions
+   };
+
+   //! Ordering information for the event detection.
+   const int nNumEvents = 6;
+   const int nVFe40     = 0;
+   const int VLg        = 1;
+   const int VFe100     = 2;
+   const int VThrshld   = 3;
+   const int AltThrshld = 4;
+   const int VTouchdown = 5;
 
 };
 

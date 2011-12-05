@@ -21,6 +21,8 @@
 
 #include "EventDetector.h"
 
+using namespace Data;
+
 //#define PRINT_EVENTS
 
 namespace Event
@@ -55,14 +57,6 @@ namespace Event
       return (value - min) / (max - min);
    }
  
-
-   const int nVFe40     = 0;
-   const int VLg        = 1;
-   const int VFe100     = 2;
-   const int VThrshld   = 3;
-   const int AltThrshld = 4;
-   const int VTouchdown = 5;
-
    bool EventDetector::DetectEvents( 
       const QString& sFlightName, 
       Data::DataMgmt* dataMgmt, 
@@ -85,36 +79,36 @@ namespace Event
       int          nLandingTime;
       double       fLandingIAS;
 
-      for( int i = 0; i < 6; ++i )
+      for( int i = 0; i < nNumEvents; ++i )
       {
          switch( i )
          {
-         case 0:
+         case nVFe40:
             evt._eventName   = "VFe40";
             evt._eventDesc   = "Flap Extension 40% (IAS)";
             evt._sequence    = 1;
             break;
-         case 1:
+         case VLg:
             evt._eventName   = "VLg";
             evt._eventDesc   = "Landing Gear Extension (IAS)";
             evt._sequence    = 2;
             break;
-         case 2:
+         case VFe100:
             evt._eventName   = "VFe100";
             evt._eventDesc   = "Flap Extension 100% (IAS)";
             evt._sequence    = 3;
             break;
-         case 3:
+         case VThrshld:
             evt._eventName   = "VThrshld";
             evt._eventDesc   = "Runway Threshold (IAS)";
             evt._sequence    = 4;
             break;
-         case 4:
+         case AltThrshld:
             evt._eventName   = "AltThrshld";
             evt._eventDesc   = "Runway Threshold (Alt)";
             evt._sequence    = 4;
             break;
-         case 5:
+         case VTouchdown:
             evt._eventName   = "VTouchdown";
             evt._eventDesc   = "Landing (IAS)";
             evt._sequence    = 4; // landing is a zero reference.

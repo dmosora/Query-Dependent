@@ -321,10 +321,9 @@ void Visualization::OnViewEventGlyph()
 {
    EventGlyph* event_glyph = new EventGlyph(DefaultWindowSize.width(), DefaultWindowSize.height(), 6);
 
-   std::vector<float> data;
-   
    const Data::EventDatabase& evtDb = m_dataMgmt.GetEventData();
-   Data::EventDatabaseIterator iDb(evtDb);
+   std::vector<float> data;
+   Data::EventContainerIterator iDb(evtDb._events);
    while( iDb.hasNext() )
    {
       iDb.next();
