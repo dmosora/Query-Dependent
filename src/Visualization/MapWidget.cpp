@@ -1,5 +1,11 @@
 #include "MapWidget.h"
 
+AircraftOverlay::AircraftOverlay(QGraphicsItem* parent, QGraphicsScene* scene)
+    : QGraphicsItem(parent, scene)
+{
+    _image = new QPixmap(":/Visualization/images/plane_right.png");
+}
+
 MapArea::MapArea(QWidget *parent) :
     QGraphicsWebView()
 {
@@ -7,6 +13,70 @@ MapArea::MapArea(QWidget *parent) :
 }
 
 MapWidget::MapWidget(QWidget *parent) :
+    QWidget(parent)
+{
+    _latStart = 30.412558;
+    _lonStart = -87.517914;
+    _latEnd   = 30.232374;
+    _lonEnd   = -87.276215;
+
+    _scene = new QGraphicsScene(this);
+
+    // Add the map the the scene
+    _picMap = new QPixmap(QString(":/Visualization/images/map.png"));
+
+    QGraphicsPixmapItem* item = _scene->addPixmap(*_picMap);
+    item->setPos(0,0);
+}
+
+void MapWidget::setMapView(QGraphicsView* view)
+{
+    _view = view;
+    _view->setScene(_scene);
+    _view->setMaximumSize(589,514);
+    _view->setMinimumSize(_view->maximumSize());
+}
+
+/// Only needed for dynamic maps with URL (or javascript retrieval)
+void MapWidget::updateMap()
+{ }
+
+void MapWidget::resizeEvent(QResizeEvent* event)
+{
+    //updateMap();
+    //_mapArea->resize(size());
+    _view->resize(size());
+}
+
+void MapWidget::getFlightData()
+{
+    /*// Get the data we need to draw the path
+    // Should this get all data up to the point on the slider?
+    // Or just all data at once then go through it.
+    std::vector<float> data;
+
+    // This will help with multiple flights
+    // Data::getLoadedFlights(QStringList&)
+
+    const Data::EventDatabase& evtDb = m_dataMgmt.GetEventData();
+    Data::EventDatabaseIterator iDb(evtDb);
+    while( iDb.hasNext() )
+    {
+       iDb.next();
+       data.clear();
+       Data::EventDataIterator iList(iDb.value());
+       while( iList.hasNext() )
+       {
+          data.push_back( iList.next()._valueNormal.toFloat() );
+       }
+       //event_glyph->CreatePointSet(data, iDb.key().toStdString());
+    }*/
+}
+
+
+
+/// Old Code
+/*MapWidget::MapWidget(QWidget *parent) :
     QWidget(parent)
 {
     /// Pixmap map code
@@ -39,15 +109,7 @@ MapWidget::MapWidget(QWidget *parent) :
     updateMap();
 
     _scene->addItem(_mapArea);
-    */
-}
-
-void MapWidget::setMapView(QGraphicsView* view)
-{
-    _view = view;
-    _view->setScene(_scene);
-    _view->setMaximumSize(589,514);
-    _view->setMinimumSize(_view->maximumSize());
+    *//*
 }
 
 /// Only needed for dynamic maps with URL (or javascript retrieval)
@@ -65,11 +127,4 @@ void MapWidget::updateMap()
     //std::cerr << url.toStdString() << '\n';
     _mapArea->setUrl(QUrl(url));
     */
-}
-
-void MapWidget::resizeEvent(QResizeEvent* event)
-{
-    //updateMap();
-    //_mapArea->resize(size());
-    _view->resize(size());
-}
+//}

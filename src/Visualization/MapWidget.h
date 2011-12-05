@@ -15,15 +15,18 @@
 
 #include "TimeSlider.h"
 #include "LinkLabel.hpp"
+#include "DataTypes.h"
+#include "DataMgmt.h"
 
 // This will help us draw and keep track of the plane icon.
 // NOTE: This should be a QGraphicsItem for control with the GraphicsScene
-class AircraftOverlay
+class AircraftOverlay : public QGraphicsItem
 {
 public:
-    AircraftOverlay() {}
+    AircraftOverlay(QGraphicsItem* parent = 0, QGraphicsScene* scene = 0);
+
 private:
-    // Coords of the top-left corner of the graphic
+    // Coords of the center of the graphic (translate in drawing by shifting)
     int _posX;
     int _posY;
 
@@ -60,11 +63,22 @@ class MapWidget : public QWidget
 {
     Q_OBJECT
 public:
+    // Constructors
     explicit MapWidget(QWidget *parent = 0);
     MapWidget(QGraphicsView* view, QWidget *parent = 0);
 
+    // For visualizing and adding things to the scene's view
     void setMapView(QGraphicsView* view);
+
+    // Drawing related methods
+    void getFlightData();
     void updateMap();
+    void drawMapVis();
+    void drawFlightPath(QString flight_id);
+    void drawPlane(QString flight_id);
+
+    QPoint gpsToPixels(double lat, double lon);
+    QPoint pixelsToGps(int x, int y);
 
 signals:
 
@@ -74,13 +88,16 @@ protected:
     virtual void resizeEvent(QResizeEvent* event);
 
 private:
+    // View components
     QGraphicsScene* _scene;
     QGraphicsView*  _view;          // The view in which this map is contained in the MDI
     MapArea*        _mapArea;
-    //TimeSlider*     _toolbar;     // Now in Visualization.h
 
+    // Background map
     QPixmap*        _picMap;        // For static map
 
+    // Drawing related things
+    QStringList*    _flights;
     double          _latStart;
     double          _lonStart;
     double          _latEnd;

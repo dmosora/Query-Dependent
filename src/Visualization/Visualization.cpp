@@ -45,7 +45,7 @@ using namespace std;
 
 Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
    : QMainWindow(parent, flags)
-   , _map()
+   , _map(0)
    , m_viewPC(NULL)
    , m_viewTable(NULL)
    , m_nNextFlightNum(0)
@@ -224,8 +224,8 @@ void Visualization::DatabaseStatus(QString sFlightName)
 
 
    // -------------------------------------------------------------------------
-   // Example widget appearing in the main window as a sub-window of the 
-   // visualization
+   // Creates the necessary map if it does not yet exist properly,
+   // otherwise add new flights to the vis
    createVisualizationUI();
    
    // Increment when the CSV thread is started.  
@@ -242,42 +242,44 @@ void Visualization::DatabaseStatus(QString sFlightName)
 // This function is where we should set up the widgets we will use.
 void Visualization::createVisualizationUI()
 {
-   _map = new MapWidget(this);
-   _map->resize(ui.mdiArea->size());
-   //_map->updateMap();                 // Dynamic map ONLY
+    if(!_map) {
+        _map = new MapWidget(this);
+        _map->resize(ui.mdiArea->size());
+        //_map->updateMap();                 // Dynamic map ONLY
 
-   // Make the time slider for this
-   _toolbar = new TimeSlider(this);
-   _toolbar->setMovable(false);
+        // Make the time slider for this
+        _toolbar = new TimeSlider(this);
+        _toolbar->setMovable(false);
 
-   // Organize them in a layout and make the mdi widget
-   _mapAndSlider = new QVBoxLayout(this);
-   _mapAndSlider->addWidget(_toolbar);
-   _mapAndSlider->addWidget(_map);
+        // Organize them in a layout and make the mdi widget
+        _mapAndSlider = new QVBoxLayout(this);
+        _mapAndSlider->addWidget(_toolbar);
+        _mapAndSlider->addWidget(_map);
 
-   _mdiMapWidget = new QWidget(this);
-   _mdiMapWidget->setLayout(_mapAndSlider);
+        _mdiMapWidget = new QWidget(this);
+        _mdiMapWidget->setLayout(_mapAndSlider);
 
-   // Prepare the subwindow in the Mdi
-   //_mapsubwindow = ui.mdiArea->addSubWindow(_map);
-   _mapsubwindow = ui.mdiArea->addSubWindow(_mdiMapWidget);
-   _mapsubwindow->resize(607,550);
-   _mapsubwindow->setMaximumSize(_mapsubwindow->size());
-   _mapsubwindow->setMinimumSize(_mapsubwindow->size());
+        // Prepare the subwindow in the Mdi
+        //_mapsubwindow = ui.mdiArea->addSubWindow(_map);
+        _mapsubwindow = ui.mdiArea->addSubWindow(_mdiMapWidget);
+        _mapsubwindow->resize(607,550);
+        _mapsubwindow->setMaximumSize(_mapsubwindow->size());
+        _mapsubwindow->setMinimumSize(_mapsubwindow->size());
 
-   // Make this add a GraphicsView instead of the widget
-   QGraphicsView* view = new QGraphicsView(_map);
-   view->setHorizontalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
-   view->setVerticalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
-   _map->setMapView(view);
+        // Make this add a GraphicsView instead of the widget
+        QGraphicsView* view = new QGraphicsView(_map);
+        view->setHorizontalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
+        view->setVerticalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
+        _map->setMapView(view);
 
-   // Show the views necessary
-   view->show();
-   _mapsubwindow->show();
-   //std::cerr << "does it make it here\n";
-   //subwindow->resize(DefaultWindowSize);
-   //subwindow->show();
-   //subwindow->showMaximized();
+        // Show the views necessary
+        view->show();
+        _mapsubwindow->show();
+
+        // Make connections for the toolbar
+    } else {
+        // Add new flights to the map vis
+    }
 }
 
 void Visualization::OnViewTable()

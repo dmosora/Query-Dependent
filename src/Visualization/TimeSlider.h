@@ -24,10 +24,10 @@ public:
     TimeSlider(QWidget* parent = 0);
 
     // Do we need a time class to return?
-    QTime currentTime();
+    double currentTime();
 
 public slots:
-    void onTimeChanged(int);
+    void onTimeChanged();
     void onPlayToggled(bool value);
     void onNextClicked();
     void onPrevClicked();
@@ -35,20 +35,21 @@ public slots:
     void onLastClicked();
     void onIntervalChanged(double);
 
+signals:
+    void timeChanged();
+
 private slots:
     //void moveTimeTo(double time);       // Might need changed if we make a time class
-    //void advanceTime(int steps);
-    //void incrementTime();
+    void advanceTime(int steps);
+    void incrementTime();
 
 private:
     QSlider*        _slider;
-    QTime*          _currentTime;
+    double          _currentTime;
     int             _currentTimeIndex;  // For the slider's index
     QHBoxLayout*    _mediaBar;
     LinkLabel*      _play;
     LinkLabel*      _pause;
-    LinkLabel*      _next;
-    LinkLabel*      _prev;
     LinkLabel*      _first;
     LinkLabel*      _last;
 
