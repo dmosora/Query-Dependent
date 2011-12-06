@@ -307,6 +307,9 @@ void Visualization::createVisualizationUI()
         connect(_toolbar, SIGNAL(timeChanged(int)), _map, SLOT(onTimeChanged(int)));
         connect(_loadedFlights,SIGNAL(currentIndexChanged(QString)),_map,SLOT(onActiveFlightChanged(QString)));
         connect(_loadedFlights,SIGNAL(currentIndexChanged(int)),_map,SLOT(onActiveFlightIndexChanged(int)));
+
+        // Maximize the window, it's too small!
+        showMaximized();
     } else {
         /// This could be greatly improved by not going through the flights already loaded
         // Add new flights to the map vis
