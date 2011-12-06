@@ -10,7 +10,7 @@
 #include <QtWebkit/QGraphicsWebView>
 #include <QUrl>
 
-
+#include <cstdlib>
 #include <iostream>
 
 #include "TimeSlider.h"
@@ -18,19 +18,59 @@
 #include "DataTypes.h"
 #include "DataMgmt.h"
 
+// Global functions for conversions
+/// QUICK IMPLEMENTATION, this needs to be moved for dynamic maps
+const double _latStart = 30.412558;
+const double _lonStart = -87.517914;
+const double _latEnd   = 30.232374;
+const double _lonEnd   = -87.276215;
+
+//QPoint pixelsToGps(int x, int y);
+
 // This will help us draw and keep track of the plane icon.
-// NOTE: This should be a QGraphicsItem for control with the GraphicsScene
 class AircraftOverlay : public QGraphicsItem
 {
 public:
     AircraftOverlay(QGraphicsItem* parent = 0, QGraphicsScene* scene = 0);
 
+    void setLocationData(QVariant lat, QVariant lon) { _lat = lat; _lon = lon; }
+    QPoint gpsToPixels(double lat, double lon);
+
+    QRectF boundingRect() const { return QRectF(0, 0, 40, 32); }
+
+    void paint(QPainter *painter,
+               const QStyleOptionGraphicsItem *option,
+               QWidget *widget);
+
 private:
-    // Coords of the center of the graphic (translate in drawing by shifting)
-    int _posX;
-    int _posY;
+    QVariant _lat;
+    QVariant _lon;
 
     QPixmap* _image;
+};
+
+// Class to draw a path on
+class FlightPath : public QGraphicsItem
+{
+public:
+    FlightPath(QGraphicsItem *parent = 0);
+
+    void setLocationData(const Data::Point* lat, const Data::Point* lon)
+    { _lat = lat; _lon = lon; }
+
+    void setFinalIndex(int idx) { _finalIndex = idx; }
+
+    QRectF boundingRect() const { return QRectF(0, 0, 587, 511); }
+
+    void paint(QPainter *painter,
+               const QStyleOptionGraphicsItem *option,
+               QWidget *widget);
+
+private:
+    int              _finalIndex;
+    const Data::Point*     _lat;
+    const Data::Point*     _lon;
+
 };
 
 // This will set up the background map area with a url request to Google Maps' API
@@ -73,16 +113,14 @@ public:
     void getFlightData();
     void updateMap();
     void drawMapVis();
-    void drawFlightPath(QString flight_id);
-    void drawPlane(QString flight_id);
-
-    QPoint gpsToPixels(double lat, double lon);
-    QPoint pixelsToGps(int x, int y);
+    void drawFlightPath(QString flight_id, int index);
+    void drawPlane(QString flight_id, int index);
 
 signals:
 
 public slots:
     void onActiveFlightChanged(QString);
+    void onActiveFlightIndexChanged(int idx);
     void onTimeChanged(int);
 
 protected:
@@ -93,26 +131,32 @@ private:
     void getNewAttributes();
 
     // View components
-    QGraphicsScene* _scene;
-    QGraphicsView*  _view;          // The view in which this map is contained in the MDI
-    MapArea*        _mapArea;
-    TimeSlider*     _slider;        // For access to current time
+    QGraphicsScene*     _scene;
+    QGraphicsView*      _view;          // The view in which this map is contained in the MDI
+    MapArea*            _mapArea;
+    TimeSlider*         _slider;        // For access to current time
 
-    // Background map
-    QPixmap*        _picMap;        // For static map
+    // Imagery
+    QPixmap*            _picMap;        // For static map
+    QList<FlightPath*>  _paths;
+    AircraftOverlay*    _plane;
 
     // Drawing related things
-    double          _latStart;
-    double          _lonStart;
-    double          _latEnd;
-    double          _lonEnd;
+    /// Disabled because they'll need to be here for dynamic maps
+    /*double              _latStart;
+    double              _lonStart;
+    double              _latEnd;
+    double              _lonEnd;
+    */
 
     // Data
-    int                 _currentIndex;
-    QStringList         _flights;
-    QString             _activeFlight;
-    QList<QStringList>  _loadedAttributes;
-    Data::DataMgmt*      m_dataMgmt;
+    int                   _currentIndex;
+    QStringList           _attributes;
+    QStringList           _flights;
+    QString               _activeFlight;
+    int                   _activeFlightIdx;
+    QList<Data::Buffer>   _loadedFlightsData;          /// SPEED CAN BE IMPROVED HERE
+    Data::DataMgmt*       m_dataMgmt;
 };
 
 #endif // MAPWIDGET_H

@@ -298,6 +298,7 @@ void Visualization::createVisualizationUI()
         // Make connections for the toolbar
         connect(_toolbar, SIGNAL(timeChanged(int)), _map, SLOT(onTimeChanged(int)));
         connect(_loadedFlights,SIGNAL(currentIndexChanged(QString)),_map,SLOT(onActiveFlightChanged(QString)));
+        connect(_loadedFlights,SIGNAL(currentIndexChanged(int)),_map,SLOT(onActiveFlightIndexChanged(int)));
     } else {
         /// This could be greatly improved by not going through the flights already loaded
         // Add new flights to the map vis
