@@ -18,12 +18,13 @@
 #include <iostream>
 
 #include "DataSelections.h"
+#include "DataNormalizer.h"
 
 #include "EventDetector.h"
 
 using namespace Data;
 
-//#define PRINT_EVENTS
+#define PRINT_EVENTS
 
 namespace Event
 {
@@ -34,10 +35,53 @@ namespace Event
    const int OnRunwayIdx = 3;
    const int GearIdx     = 4;
 
+   
+   // Max range for each event
+   const int nMaxVFe40      = 210;//240;
+   const int nMaxVLg        = 210;//214;
+   const int nMaxVFe100     = 210;//178;
+   const int nMaxVThrshld   = 150;
+   const int nMaxAltThrshld = 200;
+   const int nMaxVTouchdown = 125;
+   
+   // Min range for each event
+   const int nMinVFe40      = 110;//140;
+   const int nMinVLg        = 110;//114;
+   const int nMinVFe100     = 110;//78;
+   const int nMinVThrshld   = 50;
+   const int nMinAltThrshld = 0;
+   const int nMinVTouchdown = 25;
+
    // ==========================================================================
    // ==========================================================================
    EventDetector::EventDetector( )
    {
+      // Max values for the events
+      m_evtDef._maxValues.resize(nNumEvents);
+      m_evtDef._maxValues[nVFe40]      = Normalizer::Normalize( 200, nMinVFe40,      nMaxVFe40);
+      m_evtDef._maxValues[nVLg]        = Normalizer::Normalize( 181, nMinVLg,        nMaxVLg); // Audio said 160
+      m_evtDef._maxValues[nVFe100]     = Normalizer::Normalize( 146, nMinVFe100,     nMaxVFe100);
+      m_evtDef._maxValues[nVThrshld]   = Normalizer::Normalize( 113, nMinVThrshld,   nMaxVThrshld);
+      m_evtDef._maxValues[nAltThrshld] = Normalizer::Normalize( 150, nMinAltThrshld, nMaxAltThrshld);
+      m_evtDef._maxValues[nVTouchdown] = Normalizer::Normalize(  90, nMinVTouchdown, nMaxVTouchdown);
+
+      // Min values for the events
+      m_evtDef._minValues.resize(nNumEvents);
+      m_evtDef._minValues[nVFe40]      = Normalizer::Normalize( 146, nMinVFe40,      nMaxVFe40);
+      m_evtDef._minValues[nVLg]        = Normalizer::Normalize( 135, nMinVLg,        nMaxVLg);
+      m_evtDef._minValues[nVFe100]     = Normalizer::Normalize( 110, nMinVFe100,     nMaxVFe100);
+      m_evtDef._minValues[nVThrshld]   = Normalizer::Normalize( 101, nMinVThrshld,   nMaxVThrshld);
+      m_evtDef._minValues[nAltThrshld] = Normalizer::Normalize(  45, nMinAltThrshld, nMaxAltThrshld);
+      m_evtDef._minValues[nVTouchdown] = Normalizer::Normalize(  65, nMinVTouchdown, nMaxVTouchdown);
+
+      // Min values for the events
+      m_evtDef._labels.resize(nNumEvents);
+      m_evtDef._labels[nVFe40]      = "VFe40";
+      m_evtDef._labels[nVLg]        = "VLg";
+      m_evtDef._labels[nVFe100]     = "VFe100";
+      m_evtDef._labels[nVThrshld]   = "VThrshld";
+      m_evtDef._labels[nAltThrshld] = "AltThrshld";
+      m_evtDef._labels[nVTouchdown] = "VTouchdown";
    }
 
    EventDetector::~EventDetector()
@@ -47,16 +91,12 @@ namespace Event
    // ==========================================================================
    // ==========================================================================
 
-   double Normalize( double value, double min, double max )
+   
+   const Data::EventDefinition& EventDetector::GetEventDefinition() const
    {
-      if( min == 0 && max == 0 || min > max )
-      {
-         return 0;
-      }
-
-      return (value - min) / (max - min);
+      return m_evtDef;
    }
- 
+
    bool EventDetector::DetectEvents( 
       const QString& sFlightName, 
       Data::DataMgmt* dataMgmt, 
@@ -88,27 +128,27 @@ namespace Event
             evt._eventDesc   = "Flap Extension 40% (IAS)";
             evt._sequence    = 1;
             break;
-         case VLg:
+         case nVLg:
             evt._eventName   = "VLg";
             evt._eventDesc   = "Landing Gear Extension (IAS)";
             evt._sequence    = 2;
             break;
-         case VFe100:
+         case nVFe100:
             evt._eventName   = "VFe100";
             evt._eventDesc   = "Flap Extension 100% (IAS)";
             evt._sequence    = 3;
             break;
-         case VThrshld:
+         case nVThrshld:
             evt._eventName   = "VThrshld";
             evt._eventDesc   = "Runway Threshold (IAS)";
             evt._sequence    = 4;
             break;
-         case AltThrshld:
+         case nAltThrshld:
             evt._eventName   = "AltThrshld";
             evt._eventDesc   = "Runway Threshold (Alt)";
             evt._sequence    = 4;
             break;
-         case VTouchdown:
+         case nVTouchdown:
             evt._eventName   = "VTouchdown";
             evt._eventDesc   = "Landing (IAS)";
             evt._sequence    = 4; // landing is a zero reference.
@@ -134,62 +174,67 @@ namespace Event
                evtData[nVFe40]._bFound      = true;
                evtData[nVFe40]._time        = p._time;
                evtData[nVFe40]._value       = p._dataVector.at(IASIdx).toDouble();
-               evtData[nVFe40]._valueNormal = Normalize
+               evtData[nVFe40]._valueNormal = Normalizer::Normalize
                   ( p._dataVector.at(IASIdx).toDouble()
-                  , i.value()._metadata.at(IASIdx)._min
-                  , i.value()._metadata.at(IASIdx)._max );
+                  , nMinVFe40 //i.value()._metadata.at(IASIdx)._min
+                  , nMaxVFe40 //i.value()._metadata.at(IASIdx)._max 
+                  );
                
                eventTimes[0] = p._time;
             }
             
-            if( !evtData[VLg]._bFound && p._dataVector.at(GearIdx).toDouble() > 0.5 )
+            if( !evtData[nVLg]._bFound && p._dataVector.at(GearIdx).toDouble() > 0.5 )
             {
-               evtData[VLg]._bFound      = true;
-               evtData[VLg]._time        = p._time;
-               evtData[VLg]._value       = p._dataVector.at(IASIdx).toDouble();
-               evtData[VLg]._valueNormal = Normalize
+               evtData[nVLg]._bFound      = true;
+               evtData[nVLg]._time        = p._time;
+               evtData[nVLg]._value       = p._dataVector.at(IASIdx).toDouble();
+               evtData[nVLg]._valueNormal = Normalizer::Normalize
                   ( p._dataVector.at(IASIdx).toDouble()
-                  , i.value()._metadata.at(IASIdx)._min
-                  , i.value()._metadata.at(IASIdx)._max );
+                  , nMinVLg //i.value()._metadata.at(IASIdx)._min
+                  , nMaxVLg //i.value()._metadata.at(IASIdx)._max
+                  );
                
                eventTimes[1] = p._time;
             }
             
-            if( !evtData[VFe100]._bFound && p._dataVector.at(FlapHdlIdx).toDouble() == 1 )
+            if( !evtData[nVFe100]._bFound && p._dataVector.at(FlapHdlIdx).toDouble() == 1 )
             {
-               evtData[VFe100]._bFound      = true;
-               evtData[VFe100]._time        = p._time;
-               evtData[VFe100]._value       = p._dataVector.at(IASIdx).toDouble();
-               evtData[VFe100]._valueNormal = Normalize
+               evtData[nVFe100]._bFound      = true;
+               evtData[nVFe100]._time        = p._time;
+               evtData[nVFe100]._value       = p._dataVector.at(IASIdx).toDouble();
+               evtData[nVFe100]._valueNormal = Normalizer::Normalize
                   ( p._dataVector.at(IASIdx).toDouble()
-                  , i.value()._metadata.at(IASIdx)._min
-                  , i.value()._metadata.at(IASIdx)._max );
+                  , nMinVFe100 //i.value()._metadata.at(IASIdx)._min
+                  , nMaxVFe100 //i.value()._metadata.at(IASIdx)._max
+                  );
                
                eventTimes[2] = p._time;
             }
             
-            if( !evtData[VThrshld]._bFound && p._dataVector.at(OnRunwayIdx).toDouble() > 0.5 )
+            if( !evtData[nVThrshld]._bFound && p._dataVector.at(OnRunwayIdx).toDouble() > 0.5 )
             {
-               evtData[VThrshld]._bFound      = true;
-               evtData[VThrshld]._time        = p._time;
-               evtData[VThrshld]._value       = p._dataVector.at(IASIdx).toDouble();
-               evtData[VThrshld]._valueNormal = Normalize
+               evtData[nVThrshld]._bFound      = true;
+               evtData[nVThrshld]._time        = p._time;
+               evtData[nVThrshld]._value       = p._dataVector.at(IASIdx).toDouble();
+               evtData[nVThrshld]._valueNormal = Normalizer::Normalize
                   ( p._dataVector.at(IASIdx).toDouble()
-                  , i.value()._metadata.at(IASIdx)._min
-                  , i.value()._metadata.at(IASIdx)._max );
+                  , nMinVThrshld //i.value()._metadata.at(IASIdx)._min
+                  , nMaxVThrshld //i.value()._metadata.at(IASIdx)._max
+                  );
                
-               evtData[AltThrshld]._bFound      = true;
-               evtData[AltThrshld]._time        = p._time+1; //!@todo Remove the plus 1
-               evtData[AltThrshld]._value       = p._dataVector.at(AltAglIdx).toDouble();
-               evtData[AltThrshld]._valueNormal = Normalize
+               evtData[nAltThrshld]._bFound      = true;
+               evtData[nAltThrshld]._time        = p._time+1; //!@todo Remove the plus 1
+               evtData[nAltThrshld]._value       = p._dataVector.at(AltAglIdx).toDouble();
+               evtData[nAltThrshld]._valueNormal = Normalizer::Normalize
                   ( p._dataVector.at(AltAglIdx).toDouble()
-                  , i.value()._metadata.at(AltAglIdx)._min
-                  , i.value()._metadata.at(AltAglIdx)._max );
+                  , nMinAltThrshld //i.value()._metadata.at(AltAglIdx)._min
+                  , nMaxAltThrshld //i.value()._metadata.at(AltAglIdx)._max
+                  );
                
                eventTimes[3] = p._time;
             }
             
-            if( !evtData[VTouchdown]._bFound && p._dataVector.at(AltAglIdx).toDouble() < 1.0 )
+            if( !evtData[nVTouchdown]._bFound && p._dataVector.at(AltAglIdx).toDouble() < 1.0 )
             {
                if( !bPotentialLanding )
                {
@@ -203,13 +248,14 @@ namespace Event
                else if( static_cast<unsigned int>(nLandingTime+150000) > p._time )
                {
                   // Landing condition must hold for 15 seconds to be true.
-                  evtData[VTouchdown]._bFound      = true;
-                  evtData[VTouchdown]._time        = nLandingTime;
-                  evtData[VTouchdown]._value       = fLandingIAS;
-                  evtData[VTouchdown]._valueNormal = Normalize
+                  evtData[nVTouchdown]._bFound      = true;
+                  evtData[nVTouchdown]._time        = nLandingTime;
+                  evtData[nVTouchdown]._value       = fLandingIAS;
+                  evtData[nVTouchdown]._valueNormal = Normalizer::Normalize
                      ( fLandingIAS
-                     , i.value()._metadata.at(IASIdx)._min
-                     , i.value()._metadata.at(IASIdx)._max );
+                     , nMinVTouchdown //i.value()._metadata.at(IASIdx)._min
+                     , nMaxVTouchdown //i.value()._metadata.at(IASIdx)._max
+                     );
                
                   eventTimes[4] = nLandingTime;
                }

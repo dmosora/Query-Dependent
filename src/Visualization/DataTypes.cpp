@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <climits>
+
 #include "DataTypes.h"
 
 
@@ -47,6 +49,14 @@ namespace Data
       , _value(-1)
       , _valueNormal(-1)
       , _bFound(false)
+   {
+   }
+   
+   // ==========================================================================
+   // ==========================================================================
+   LoadedFlightMetaInfo::LoadedFlightMetaInfo()
+      : _uGlobalMinTime(UINT_MAX)
+      , _uGlobalMaxTime(0)
    {
    }
 };

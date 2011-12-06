@@ -129,24 +129,39 @@ namespace Data
    //! Type definition for min and max threshold ranges
    typedef std::vector<std::string> EventDefinitionLabels;
 
-   class EventDatabase
+   class EventDefinition
    {
    public:
-      EventContainer        _events;     //!< Actual event data
       EventDefinitionValues _maxValues;  //!< Max values for the events
       EventDefinitionValues _minValues;  //!< Min values for the events
       EventDefinitionLabels _labels;     //!< Labels for the event definitions
    };
 
-   //! Ordering information for the event detection.
-   const int nNumEvents = 6;
-   const int nVFe40     = 0;
-   const int VLg        = 1;
-   const int VFe100     = 2;
-   const int VThrshld   = 3;
-   const int AltThrshld = 4;
-   const int VTouchdown = 5;
+   class EventDatabase
+   {
+   public:
+      EventContainer   _events; //!< Actual event data
+      EventDefinition  _def;    //!< Definition of the event.
+   };
 
+   //! Ordering information for the event detection.
+   const int nNumEvents  = 6;
+   const int nVFe40      = 0;
+   const int nVLg        = 1;
+   const int nVFe100     = 2;
+   const int nVThrshld   = 3;
+   const int nAltThrshld = 4;
+   const int nVTouchdown = 5;
+
+   //! Data structure representing metadata information about the loaded data.
+   class LoadedFlightMetaInfo
+   {
+   public:
+      LoadedFlightMetaInfo();
+
+      unsigned int _uGlobalMinTime; //!< Minimum time of all loaded flights.
+      unsigned int _uGlobalMaxTime; //!< Maximum time of all loaded flights.
+   };
 };
 
 #endif // _DATATYPES_H_

@@ -111,6 +111,9 @@ namespace Data
           const QStringList& attributes,
           Data::Buffer& data );
 
+      //! Sets event definition
+      void SetEventDefinition( const EventDefinition& evtDef );
+
       //! Adds the event data to the data management.
       //! @param sFlightName  Name of the flight to which events will be added
       //! @param evtData      Event data to add
@@ -119,6 +122,8 @@ namespace Data
       //! Provides access to the event database.
       const EventDatabase& GetEventData( ) const;
 
+      //! Gets the metadata structure for all loaded flights.
+      const LoadedFlightMetaInfo& GetLoadedFlightMetaInfo() const;
       
    public slots:
       //! Slot to handle an interrupt signal.  This will stop the data processing.
@@ -153,7 +158,9 @@ namespace Data
       bool            m_bStop;           //!< Flag indicating that parsing should stop
       int             m_nProcessed;      //!< Running count of the buffers processed.
 
-      EventDatabase   m_evtDb;           //! Event data mapped to each flight.
+      EventDatabase   m_evtDb;           //!< Event data mapped to each flight.
+
+      LoadedFlightMetaInfo m_flightMeta; //!< Meta data on the flights that are loaded.
    };
 };
 

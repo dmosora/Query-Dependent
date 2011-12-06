@@ -31,6 +31,8 @@ namespace Event
       EventDetector( );
       ~EventDetector();
 
+      const Data::EventDefinition& GetEventDefinition() const;
+
       //! Detects the events and populates the EventData structure provided
       //! @param      sFlightName Name of the flight to detect events.
       //! @param      dataMgmt    Data management object for accessing data.
@@ -42,6 +44,8 @@ namespace Event
          Data::DataMgmt* dataMgmt, 
          Data::EventData& evtData );
 
+   private:
+      Data::EventDefinition m_evtDef;  //!< Definition for the events detected.
    };
 };
 

@@ -31,6 +31,8 @@ namespace Data
       Normalizer( );
       virtual ~Normalizer();
 
+      //! Normalizes a single value between the given min/max range.
+      static double Normalize( double value, double min, double max );
 
       //! Performs a calculation on the data according to the specific
       //! implementation.

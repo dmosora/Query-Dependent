@@ -50,37 +50,6 @@ namespace Data
       , m_bStop(false)
       , m_nProcessed(0)
    {
-      //! @todo This should really be done by the Event Detector but what 
-      //!       really needs to happen is that the event detector needs to be 
-      //!       integrated into the data management a little better or the 
-      //!       events removed from data management altogether.
-
-      // Max values for the events
-      m_evtDb._maxValues.resize(nNumEvents);
-      m_evtDb._maxValues[nVFe40]     = 200;
-      m_evtDb._maxValues[VLg]        = 181; // Audio said 160
-      m_evtDb._maxValues[VFe100]     = 146;
-      m_evtDb._maxValues[VThrshld]   = 108;
-      m_evtDb._maxValues[AltThrshld] = 65;
-      m_evtDb._maxValues[VTouchdown] = 69;
-
-      // Min values for the events
-      m_evtDb._minValues.resize(nNumEvents);
-      m_evtDb._minValues[nVFe40]     = 140;
-      m_evtDb._minValues[VLg]        = 140;
-      m_evtDb._minValues[VFe100]     = 140;
-      m_evtDb._minValues[VThrshld]   = 103;
-      m_evtDb._minValues[AltThrshld] = 45;
-      m_evtDb._minValues[VTouchdown] = 64;
-
-      // Min values for the events
-      m_evtDb._labels.resize(nNumEvents);
-      m_evtDb._labels[nVFe40]     = "VFe40";
-      m_evtDb._labels[VLg]        = "VLg";
-      m_evtDb._labels[VFe100]     = "VFe100";
-      m_evtDb._labels[VThrshld]   = "VThrshld";
-      m_evtDb._labels[AltThrshld] = "AltThrshld";
-      m_evtDb._labels[VTouchdown] = "VTouchdown";
    }
 
    DataMgmt::~DataMgmt()
@@ -444,6 +413,10 @@ namespace Data
       return true;
    }
 
+   void DataMgmt::SetEventDefinition( const EventDefinition& evtDef )
+   {
+      m_evtDb._def = evtDef;
+   }
    
    bool DataMgmt::SetEventData( QString sFlightName, const EventData& evtData )
    {
@@ -459,6 +432,10 @@ namespace Data
       return m_evtDb;
    }
    
+   const LoadedFlightMetaInfo& DataMgmt::GetLoadedFlightMetaInfo() const
+   {
+      return m_flightMeta;
+   }
    
    // ==========================================================================
    // Threading methods
@@ -506,6 +483,47 @@ namespace Data
             emit( setProgressRange(0, m_nProcessed+m_queue.Size()) );
             emit( setCurrentProgress(m_nProcessed) );
 
+            
+            if( buffer.bLastBuffer )
+            {
+               QString sQuery = "SELECT MAX(Time_Hours) FROM " + buffer.sFlightName;
+               if( q.exec(sQuery) )
+               {
+                  if( q.next() )
+                  {
+                     QSqlRecord rec = q.record();
+
+                     // The first record should always be time.
+                     QSqlField field = rec.field(0);
+                     bool bSuccess = false;
+                     double       fTime = field.value().toDouble(&bSuccess);
+                     unsigned int nTime = fTime * HoursTo100MicroSeconds;
+                     if( bSuccess && m_flightMeta._uGlobalMaxTime < nTime )
+                     {
+                        m_flightMeta._uGlobalMaxTime = nTime;
+                     }
+                  }
+               }
+               sQuery = "SELECT MIN(Time_Hours) FROM " + buffer.sFlightName;
+               if( q.exec(sQuery) )
+               {
+                  if( q.next() )
+                  {
+                     QSqlRecord rec = q.record();
+
+                     // The first record should always be time.
+                     QSqlField field = rec.field(0);
+                     bool bSuccess = false;
+                     double       fTime = field.value().toDouble(&bSuccess);
+                     unsigned int nTime = fTime * HoursTo100MicroSeconds;
+                     if( bSuccess && m_flightMeta._uGlobalMinTime > nTime )
+                     {
+                        m_flightMeta._uGlobalMinTime = nTime;
+                     }
+                  }
+               }
+            }
+
             m_db.commit();
             m_mutex.unlock();
 
@@ -530,6 +548,9 @@ namespace Data
       m_mutex.lock();
       m_bStop = true;
       m_mutex.unlock();
+
+      cout << "Overall min time=" << m_flightMeta._uGlobalMinTime << endl;
+      cout << "Overall max time=" << m_flightMeta._uGlobalMaxTime << endl;
    }
 
    // ==========================================================================

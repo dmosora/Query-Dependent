@@ -1,4 +1,64 @@
 #include "RealTimeGlyph.h"
+	// * * * * * * * 
+// GlyphGraphicsView
+	// * * * * * * * 
+
+// * * * * * * * * * * * * * * * * *
+
+RTGlyphGraphicsView::RTGlyphGraphicsView(QGraphicsScene* scene, RealTimeGlyph* glyph)
+	: QGraphicsView(scene)
+{
+	parent_glyph = glyph;
+}
+
+// * * * * * * * * * * * * * * * * *
+
+void RTGlyphGraphicsView::resizeEvent(QResizeEvent *event)
+{	
+	parent_glyph->RedrawLabelsOnResize(this->size().width(), this->size().height());
+	QGraphicsView::resizeEvent(event);
+}
+
+// * * * * * * * * * * * * * * * * *
+	// * * * * * * * 
+// GlyphAxisItem
+	// * * * * * * * 
+
+RTGlyphAxisItem::RTGlyphAxisItem(QGraphicsItem* parent, QGraphicsScene* scene, QLabel* glyph_axis_label, const std::string& attribute_name)
+	: QGraphicsLineItem(parent, scene)
+{
+	axis_label = glyph_axis_label;
+	axis_name = attribute_name;
+	setAcceptHoverEvents(true);
+}
+
+// * * * * * * * * * * * * * * * * *
+
+RTGlyphAxisItem::~RTGlyphAxisItem(void)
+{}
+
+// * * * * * * * * * * * * * * * * *
+
+void RTGlyphAxisItem::SetAxisName(const std::string& attribute_name)
+{
+	axis_name = attribute_name;
+}
+
+// * * * * * * * * * * * * * * * * *
+
+void RTGlyphAxisItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event)
+{
+	axis_label->setText(axis_name.c_str());
+}
+
+// * * * * * * * * * * * * * * * * *
+
+void RTGlyphAxisItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event)
+{
+	axis_label->setText("");
+}
+
+// * * * * * * * * * * * * * * * * *
 
 	// * * * * * * *
 // RealTimeGlyph
@@ -10,11 +70,18 @@ RealTimeGlyph::RealTimeGlyph(const int x_res, const int y_res, const int number_
 {
 		//initializing data members
 	glyph_scene = new QGraphicsScene();
-	glyph_view = new QGraphicsView(glyph_scene);
+	glyph_view = new RTGlyphGraphicsView(glyph_scene, this);
 	x_resolution = x_res;
 	y_resolution = y_res;
-	radius = std::min(x_res, y_res)/2.0 * 0.95;
+	radius = std::min(x_res, y_res)/2.0 * 0.85;
 	number_of_attributes = number_of_variables;
+		//setting axis label
+	axis_label = new QLabel(glyph_view, 0);
+	axis_label->setAlignment(Qt::AlignLeft);
+	axis_label->setMargin(7);
+	axis_label->setIndent(7);
+	axis_label->setFont(QFont("Helvetica", 22));
+	axis_label->setMinimumWidth(x_res);
 		//drawing the background gradient
 	QLinearGradient gradient(0, 0, x_resolution, y_resolution);
 	gradient.setColorAt(0, QColor(100,100,100,255));
@@ -23,7 +90,7 @@ RealTimeGlyph::RealTimeGlyph(const int x_res, const int y_res, const int number_
 	glyph_view->setRenderHint(QPainter::Antialiasing);
 		//setting scene object size
 	//glyph_scene->setSceneRect(0, 0, x_res, y_res);
-	glyph_view->setFixedSize(x_res, y_res);
+	//glyph_view->setFixedSize(x_res, y_res);
 		//calling the background line drawing method
 	DrawGlyphBackground();
 }
@@ -32,7 +99,7 @@ RealTimeGlyph::RealTimeGlyph(const int x_res, const int y_res, const int number_
 
 RealTimeGlyph::~RealTimeGlyph(void)
 {
-	std::deque<QGraphicsLineItem*>::iterator iter = background_lines.begin();
+	std::deque<RTGlyphAxisItem*>::iterator iter = background_lines.begin();
 	while(iter != background_lines.end())
 	{
 		delete *iter;
@@ -65,7 +132,7 @@ void RealTimeGlyph::DrawGlyphBackground(void)
 	{
 		double x_draw = (x_resolution/2) + radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
 		double y_draw = (y_resolution/2) + radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
-		QGraphicsLineItem* temp_line = new QGraphicsLineItem(0, glyph_scene);
+		RTGlyphAxisItem* temp_line = new RTGlyphAxisItem(0, glyph_scene, axis_label, "");
 		temp_line->setLine((x_resolution/2), (y_resolution/2), x_draw, y_draw);
 		temp_line->setPen(QPen(QColor(11,11,11,255),3));
 		background_lines.push_back(temp_line);
@@ -82,28 +149,54 @@ void RealTimeGlyph::DrawPointSet(const std::vector<float>& data)
 		std::vector<std::pair<float, float> > draw_points;
 		for(int i=0; i<number_of_attributes; ++i)
 		{
-			float x_draw = (x_resolution/2) + data[i]*radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
-			float y_draw = (y_resolution/2) + data[i]*radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
-			draw_points.push_back(std::pair<float, float>(x_draw, y_draw));
+			if(data[i] != -1)
+			{
+				float x_draw = (x_resolution/2) + data[i]*radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+				float y_draw = (y_resolution/2) + data[i]*radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+				draw_points.push_back(std::pair<float, float>(x_draw, y_draw));
+			}
+			else
+			{
+				float x_draw = (x_resolution/2) + 0*radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+				float y_draw = (y_resolution/2) + 0*radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+				draw_points.push_back(std::pair<float, float>(x_draw, y_draw));
+			}
 		}
 		for(int i=0; i<number_of_attributes-1; ++i)
 		{
 			QGraphicsLineItem* temp_line = new QGraphicsLineItem(0, glyph_scene);
 			temp_line->setLine(draw_points[i].first, draw_points[i].second, draw_points[i+1].first, draw_points[i+1].second);
-			temp_line->setPen(QPen(QColor(40,95,150,255),4));
+			if(data[i] == -1 || data[i+1] == -1)
+			{
+				QPen glyph_pen(QColor(40,95,150,255),4);
+				glyph_pen.setStyle(Qt::DotLine);
+				temp_line->setPen(glyph_pen);
+			}
+			else
+				temp_line->setPen(QPen(QColor(40,95,150,255),4));
 			line_set.push_back(temp_line);
 		}
 		QGraphicsLineItem* temp_line = new QGraphicsLineItem(0, glyph_scene);
 		temp_line->setLine(draw_points[number_of_attributes-1].first, draw_points[number_of_attributes-1].second, draw_points[0].first, draw_points[0].second);
-		temp_line->setPen(QPen(QColor(40,95,150,255),4));
+		if(data[number_of_attributes-1] == -1 || data[0] == -1)
+		{
+			QPen glyph_pen(QColor(40,95,150,255),4);
+			glyph_pen.setStyle(Qt::DotLine);
+			temp_line->setPen(glyph_pen);
+		}
+		else
+			temp_line->setPen(QPen(QColor(40,95,150,255),4));
 		line_set.push_back(temp_line);
 		for(int i=0; i<number_of_attributes; ++i)
 		{
-			QGraphicsEllipseItem* temp_point = new QGraphicsEllipseItem(0, glyph_scene);
-			temp_point->setRect(draw_points[i].first-10, draw_points[i].second-10, 20, 20);
-			temp_point->setBrush(QColor(40,95,150,255));
-			temp_point->setPen(QPen(QColor(20, 75, 130),2));
-			point_set.push_back(temp_point);
+			if(data[i] != -1)
+			{
+				QGraphicsEllipseItem* temp_point = new QGraphicsEllipseItem(0, glyph_scene);
+				temp_point->setRect(draw_points[i].first-10, draw_points[i].second-10, 20, 20);
+				temp_point->setBrush(QColor(40,95,150,255));
+				temp_point->setPen(QPen(QColor(20, 75, 130),2));
+				point_set.push_back(temp_point);
+			}
 		}
 	}
 }
@@ -134,7 +227,7 @@ void RealTimeGlyph::ClearGlyph(void)
 
 void RealTimeGlyph::SetAttributeNumber(const int number_of_variables)
 {
-	std::deque<QGraphicsLineItem*>::iterator iter = background_lines.begin();
+	std::deque<RTGlyphAxisItem*>::iterator iter = background_lines.begin();
 	while(iter != background_lines.end())
 	{
 		delete *iter;
@@ -142,7 +235,35 @@ void RealTimeGlyph::SetAttributeNumber(const int number_of_variables)
 	}
 	background_lines.clear();
 	number_of_attributes = number_of_variables;
+	name_labels.clear();
 	DrawGlyphBackground();
+}
+
+// * * * * * * * * * * * * * * * * *
+
+void RealTimeGlyph::SetAxisLabels(const std::vector<std::string>& axis_names)
+{
+	if((int)axis_names.size() == number_of_attributes)
+	{
+		name_labels.clear();
+		int name_count = 0;
+		for(std::deque<RTGlyphAxisItem*>::iterator iter = background_lines.begin(); iter != background_lines.end(); ++iter)
+		{
+			(*iter)->SetAxisName(axis_names[name_count]);
+			++name_count;
+		}
+		for(int i=0; i<number_of_attributes; ++i)
+		{
+			double x_draw = (x_resolution/2) + 1.1*radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+			double y_draw = (y_resolution/2) + 1.1*radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+			QLabel* temp_label = new QLabel(glyph_view, 0);
+			temp_label->setFont(QFont("Helvetica", 18));
+			temp_label->setText(axis_names[i].c_str());
+			temp_label->setGeometry(x_draw-(temp_label->sizeHint().width()/2), y_draw-(temp_label->sizeHint().height()/2), temp_label->sizeHint().width(), temp_label->sizeHint().height());
+			temp_label->setAlignment(Qt::AlignCenter);
+			name_labels.push_back(temp_label);
+		}
+	}
 }
 
 // * * * * * * * * * * * * * * * * *
@@ -150,6 +271,28 @@ void RealTimeGlyph::SetAttributeNumber(const int number_of_variables)
 void RealTimeGlyph::ShowGlyph(void)
 {
 	glyph_view->show();
+}
+
+// * * * * * * * * * * * * * * * * *
+
+QGraphicsView* RealTimeGlyph::GetGlyphView(void)
+{
+	return glyph_view;
+}
+
+// * * * * * * * * * * * * * * * * *
+
+void RealTimeGlyph::RedrawLabelsOnResize(const int x_res, const int y_res)
+{
+	std::deque<QLabel*>::iterator iter = name_labels.begin();
+	for(int i=0; i<number_of_attributes; ++i)
+	{
+		double x_draw = (x_res/2) + 1.1*radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+		double y_draw = (y_res/2) + 1.1*radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+		(*iter)->setGeometry(x_draw-((*iter)->sizeHint().width()/2), y_draw-((*iter)->sizeHint().height()/2), (*iter)->sizeHint().width(), (*iter)->sizeHint().height());
+		(*iter)->update();
+		++iter;
+	}
 }
 
 // * * * * * * * * * * * * * * * * *

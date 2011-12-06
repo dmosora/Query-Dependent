@@ -32,6 +32,16 @@ namespace Data
 
    }
 
+   double Normalizer::Normalize( double value, double min, double max )
+   {
+      if( min == 0 && max == 0 || min > max )
+      {
+         return 0;
+      }
+
+      return (value - min) / (max - min);
+   }
+
 
    bool Normalizer::Process( Data::Buffer& data )
    {

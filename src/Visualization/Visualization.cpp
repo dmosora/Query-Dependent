@@ -37,7 +37,7 @@
 
 //const QString sConnectionName = "Database.db";
 const QString sConnectionName = ":memory:";
-const QSize DefaultWindowSize(400,300);
+const QSize DefaultWindowSize(600,450);
 
 using namespace std;
 
@@ -52,7 +52,10 @@ Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
 {
    ui.setupUi(this);
 
+   
+   Event::EventDetector evtDetect;
    m_dataMgmt.Connect( sConnectionName );
+   m_dataMgmt.SetEventDefinition( evtDetect.GetEventDefinition() );
    this->addDockWidget(Qt::LeftDockWidgetArea, &m_dockWidgetAttr);
    m_attrSel.SetDataMgmt( &m_dataMgmt );
    m_dockWidgetAttr.SetModel( &m_attrSel );
@@ -321,9 +324,17 @@ void split_str(const std::string& str, std::vector<float>& vec, const char& spli
 
 void Visualization::OnViewEventGlyph()
 {
-   EventGlyph* event_glyph = new EventGlyph(DefaultWindowSize.width(), DefaultWindowSize.height(), 6);
+   EventGlyph* event_glyph = new EventGlyph(DefaultWindowSize.width(), DefaultWindowSize.height()-30, 6);
+   //EventGlyph* event_glyph = new EventGlyph(700, 700, 6);
 
    const Data::EventDatabase& evtDb = m_dataMgmt.GetEventData();
+
+   // Set the max lines data.
+   event_glyph->SetMaxLines( evtDb._def._maxValues );
+   event_glyph->SetMinLines( evtDb._def._minValues );
+   event_glyph->SetAxisLabels( evtDb._def._labels );
+
+   // Set the event data
    std::vector<float> data;
    Data::EventContainerIterator iDb(evtDb._events);
    while( iDb.hasNext() )
@@ -337,9 +348,10 @@ void Visualization::OnViewEventGlyph()
       }
       event_glyph->CreatePointSet(data, iDb.key().toStdString());
    }
-   event_glyph->ShowGlyph();
+   //event_glyph->ShowGlyph();
 
-   QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(event_glyph);
+   QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(event_glyph->GetGlyphView());
+   subwindow->setWindowTitle(QApplication::translate("VisualizationClass", "Event Glyph", 0, QApplication::UnicodeUTF8));
    subwindow->setAttribute( Qt::WA_DeleteOnClose );
    subwindow->resize(DefaultWindowSize);
    subwindow->show();
