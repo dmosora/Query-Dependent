@@ -53,19 +53,49 @@ void FlightPath::paint(QPainter *painter,
            const QStyleOptionGraphicsItem *option,
            QWidget *widget)
 {
+    QBrush brush;
+    brush = painter->brush();
+    brush.setColor(QColor::fromHsv(300,255,255));
+    painter->setBrush(brush);
+
     // Implement the drawing of the path itself here
     // Go through the data and draw a dot for each coordinate
-    for(int i = 0;i < _finalIndex;i++) {
+    QPen pen;
+    pen = painter->pen();
+    pen.setWidth(5);
+    pen.setColor(QColor::fromHsv(0,255,230,150));
+    painter->setPen(pen);
+
+    for(int i = 0;i < _finalIndex;i += 80) {
         // Convert coordinates to pixels and shift them for the drawPixmap operation
         QPoint point = gpsToPixels(_coords->at(i)._dataVector[0].toDouble(), _coords->at(i)._dataVector[1].toDouble());
 
         // Fudging the position a bit here (again)
-        point.setX(point.x() - 40);
-        point.setY(point.y() + 50);
+        point.setX(point.x() - 22);
+        point.setY(point.y() + 65);
 
-        painter->setPen(QColor::fromHsv(300,255,255));
-        painter->drawEllipse(point.y(), point.x(), 15, 15);
+        painter->drawEllipse(point.y(), point.x(), 5, 5);
     }
+/*
+    QPen pen;
+    pen = painter->pen();
+    pen.setWidth(5);
+    pen.setColor(QColor::fromHsv(0,255,255));
+    painter->setPen(pen);
+
+    QPoint previous = gpsToPixels(_coords->at(0)._dataVector[0].toDouble(), _coords->at(0)._dataVector[1].toDouble());
+    for(int i = 1; i < 300; i++) {
+        // Convert coordinates to pixels and shift them for the drawPixmap operation
+        QPoint point = gpsToPixels(_coords->at(i * (_finalIndex/300))._dataVector[0].toDouble(), _coords->at(i * (_finalIndex/300))._dataVector[1].toDouble());
+
+        // Fudging the position a bit here (again)
+        point.setX(point.x() - 22);
+        point.setY(point.y() + 65);
+
+        painter->drawLine(previous.y(),previous.x(), point.y(), point.x());
+        previous = point;
+    }
+    */
 }
 
 QPoint FlightPath::gpsToPixels(double lat, double lon) {
@@ -85,6 +115,8 @@ QPoint FlightPath::gpsToPixels(double lat, double lon) {
 
     point.setX(double(latOffset/latRange) * 587.0);
     point.setY(double(lonOffset/lonRange) * 511.0);
+
+    return point;
 }
 
 //***********************************
@@ -107,7 +139,6 @@ MapWidget::MapWidget(QWidget *parent) :
     _lonEnd   = -87.276215;
     */
     _plane = 0;
-
     _activeFlightIdx = 0;
 
     _scene = new QGraphicsScene(this);
@@ -140,21 +171,19 @@ void MapWidget::setTimeSlider(TimeSlider* slider)
 
 void MapWidget::updateMap()
 {
-    // Clear the drawing space
-    // Remove the Aircraft Overlay object
-    if(_plane) _scene->removeItem(_plane);
+    // Big if to speed it up by removing some of the calculating
+    if(_currentIndex % 20 == 0) {
+        // Clear the drawing space
+        // Remove the Aircraft Overlay object
+        if(_plane) _scene->removeItem(_plane);
+        for(int i = 0;i < _paths.size();i++) {
+            if(_paths[i]) _scene->removeItem(_paths[i]);
+        }
 
-    // Remove the  path objects
-    for(int i = 0;i < _paths.size(); i++) {
-        if(_paths[i]) _scene->removeItem(_paths[i]);
+        // Draw and position the new paths and plane
+        drawMapVis();
+        _view->update();
     }
-
-    // Update our data
-    getNewAttributes();
-
-    // Draw and position the new paths and plane
-    drawMapVis();
-    _view->update();
 }
 
 // Invoke the drawing of the flight path for flights loaded
@@ -163,13 +192,14 @@ void MapWidget::drawMapVis()
 {
     // Zero out old paths and plane cause they have been removed from the view
     if(_plane) delete _plane; _plane = 0;
-    //_paths.clear();
+    _paths.clear();
 
     // Draw flight paths here
-    for(int i = 0;i < _flights.size(); i++) {
-        //drawFlightPath(_flights[i], i);
+    std::cerr << "Loaded flights size is " << _loadedFlightsData.size() << std::endl;
+    int i = 0;
+    for(;i < _loadedFlightsData.size(); i++) {
+            drawFlightPath(_flights[i], i);
     }
-
 
     // Draw active plane here
     drawPlane(_activeFlight, _activeFlightIdx);
@@ -182,10 +212,12 @@ void MapWidget::drawFlightPath(QString flight_id, int index)
 {
     // Create a new FlightPath
     FlightPath* path = new FlightPath();
-
+std::cerr << "Failure check ***3***\n";
+std::cerr << "Index is " << index << " for flight " << flight_id.toStdString() << std::endl;
     // Set its data and index
     path->setLocationData(&_loadedFlightsData.at(index)._params);
-
+    path->setFinalIndex(_currentIndex);
+    //std::cerr << "Does it make it here? \n";
     // Set its location in the view
     path->setPos(0,0);
 
@@ -240,13 +272,15 @@ void MapWidget::onTimeChanged(int idx)
 // Redo this if you have time to get only one flight's lat/lon
 void MapWidget::getNewAttributes()
 {
+    _loadedFlightsData.clear();
+
     // Get the currently loaded flight names
     m_dataMgmt->GetLoadedFlights(_flights);
 
     // Push the attributes we need
-    if(_loadedFlightsData.size() < _flights.size()) {
+    for(int i = 0; i < _flights.size();i++) {
         Data::Buffer buffer;
-        m_dataMgmt->GetDataAttributes(_flights.back(), _attributes, buffer);
+        m_dataMgmt->GetDataAttributes(_flights.at(i), _attributes, buffer);
 
         _loadedFlightsData.push_back(buffer);
     }

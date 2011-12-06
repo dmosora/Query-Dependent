@@ -317,6 +317,8 @@ void Visualization::createVisualizationUI()
             _toolbar->setNewMax(buffer._params.size());
         }
 
+        _map->getNewAttributes();
+
         // Reset the index to what they had selected before
         _loadedFlights->setCurrentIndex(currentItem);
 

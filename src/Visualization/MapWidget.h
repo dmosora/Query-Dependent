@@ -58,7 +58,11 @@ public:
     void setLocationData(const QList<Data::Point>* coords)
     { _coords = coords; }
 
-    void setFinalIndex(int idx) { if(idx < _coords->size()) _finalIndex = idx; }
+    void setFinalIndex(int idx)
+    {
+        if(idx < _coords->size()) _finalIndex = idx;
+        else _finalIndex = _coords->size() - 1;
+    }
 
     QPoint gpsToPixels(double lat, double lon);
 
@@ -117,6 +121,9 @@ public:
     void drawFlightPath(QString flight_id, int index);
     void drawPlane(QString flight_id, int index);
 
+    // Data update method
+    void getNewAttributes();
+
 signals:
 
 public slots:
@@ -128,9 +135,6 @@ protected:
     virtual void resizeEvent(QResizeEvent* event);
 
 private:
-    // Data update method
-    void getNewAttributes();
-
     // View components
     QGraphicsScene*     _scene;
     QGraphicsView*      _view;          // The view in which this map is contained in the MDI
@@ -140,6 +144,7 @@ private:
     // Imagery
     QPixmap*            _picMap;        // For static map
     QList<FlightPath*>  _paths;
+    //QWidget*            _pathSurface;
     AircraftOverlay*    _plane;
 
     // Drawing related things
