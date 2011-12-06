@@ -26,6 +26,8 @@ public:
     // Do we need a time class to return?
     double currentTime();
 
+    void setNewMax(int max);
+
 public slots:
     void onTimeChanged();
     void onPlayToggled(bool value);
@@ -36,7 +38,7 @@ public slots:
     void onIntervalChanged(double);
 
 signals:
-    void timeChanged();
+    void timeChanged(int);
 
 private slots:
     //void moveTimeTo(double time);       // Might need changed if we make a time class
@@ -44,6 +46,7 @@ private slots:
     void incrementTime();
 
 private:
+    // GUI elements
     QSlider*        _slider;
     double          _currentTime;
     int             _currentTimeIndex;  // For the slider's index
@@ -52,6 +55,9 @@ private:
     LinkLabel*      _pause;
     LinkLabel*      _first;
     LinkLabel*      _last;
+
+    // Bounds
+    int             _max;
 
     // Control widgets
     QCheckBox*      _loop;

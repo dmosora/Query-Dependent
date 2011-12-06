@@ -63,10 +63,11 @@ public:
     explicit MapWidget(QWidget *parent = 0);
     MapWidget(QGraphicsView* view, QWidget *parent = 0);
 
-    // For visualizing and adding things to the scene's view
+    // Setters
     void setMapView(QGraphicsView* view);
     void setTimeSlider(TimeSlider* slider);
     void setDataMgmt(Data::DataMgmt* Mgmt) { m_dataMgmt = Mgmt; }
+    void setActiveFlight(QString flight) { _activeFlight = flight; }
 
     // Drawing related methods
     void getFlightData();
@@ -82,7 +83,7 @@ signals:
 
 public slots:
     void onActiveFlightChanged(QString);
-    void onTimeChanged();
+    void onTimeChanged(int);
 
 protected:
     virtual void resizeEvent(QResizeEvent* event);
@@ -107,6 +108,7 @@ private:
     double          _lonEnd;
 
     // Data
+    int                 _currentIndex;
     QStringList         _flights;
     QString             _activeFlight;
     QList<QStringList>  _loadedAttributes;

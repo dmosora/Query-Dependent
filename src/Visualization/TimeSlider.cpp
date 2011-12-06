@@ -5,13 +5,6 @@
 
 TimeSlider::TimeSlider(QWidget* parent) : QToolBar(parent)
 {
-    _currentTime = 0.0;
-
-    // Set num equal to the first time field and add it so it will wrap around
-    // to an actual time value.
-    double num;
-    _currentTime += num;
-
     // Initialize all the other attributes and set up the images
     _slider = new QSlider(Qt::Horizontal,this);
     _slider->setRange(0,10);    // Change this to amount of data points
@@ -33,15 +26,15 @@ TimeSlider::TimeSlider(QWidget* parent) : QToolBar(parent)
 
     // Layout for Playback options
     _loop = new QCheckBox(tr("Loop"), this);
-    _delay = new LinkLabel(tr("Delay (secs):"));
+    _delay = new LinkLabel(tr("Delay (ms):"));
     _delay->setEnabled(false);
     _delay->setStyleSheet(QString("QLabel { color : black; }"));
-    _delay->newToolTip(tr("Time in seconds between frames on playback."));
+    _delay->newToolTip(tr("Time in milliseconds between frames on playback."));
     _interval = new QDoubleSpinBox();
-    _interval->setRange(0.25, 2.0);
-    _interval->setDecimals(2);
-    _interval->setSingleStep(0.25);
-    _interval->setValue(2.0);
+    _interval->setRange(1, 500);
+    _interval->setDecimals(0);
+    _interval->setSingleStep(1);
+    _interval->setValue(2);
 
     addWidget(_first);
     addWidget(_play);
@@ -57,8 +50,13 @@ TimeSlider::TimeSlider(QWidget* parent) : QToolBar(parent)
 
     // Create the timer for media-style play.
     _timer = new QTimer(this);
-    _timer->setInterval((_interval->value()) * 1000);
+    _timer->setInterval((_interval->value()));
     _timer->setSingleShot(false);
+
+    // Set max at 0 to be set later by the Visualization object
+    _slider->setMinimum(0);
+    _slider->setMaximum(0);
+    _max = 0;
 
     // Connect signals, etc.
     connect(_slider, SIGNAL(valueChanged(int)), SLOT(onTimeChanged()));
@@ -69,40 +67,46 @@ TimeSlider::TimeSlider(QWidget* parent) : QToolBar(parent)
     connect(_interval, SIGNAL(valueChanged(double)), SLOT(onIntervalChanged(double)));
 }
 
+void TimeSlider::setNewMax(int max)
+{
+     if(max > _max) {
+        _max = max;
+        _slider->setMaximum(max);
+        std::cerr << "New max slider set at " << _max << std::endl;
+     }
+}
+
 /** Called when the time changes. */
 void TimeSlider::onTimeChanged()
 {
     // When time is updated, emit a signal to update other views as needed
     // The signal doesn't pass the value, but signals to the view that it needs updated
     // The view then grabs the current values from the view.
-    emit timeChanged();
+    emit timeChanged(_slider->value());
 }
 
 void TimeSlider::onPlayToggled(bool value)
 {
     // This ensures the picture is changed if triggered from elsewhere.
-    /*_play->setState(!value);
+    _play->setState(!value);
 
     if(value) {
         _timer->start();
         // If it's at the end, move it to the beginning
-        if(spec->version() == spec->versions() - 1) {
+        if(_slider->value() == _slider->maximum()) {
             _slider->setValue(0);
         }
         //_play->newImage(QPixmap(":/Visualization/images/pause_up.png"), QPixmap(":/Visualization/images/pause_down.png"), tr("Pause"));
-        _next->setEnabled(false);
-        _prev->setEnabled(false);
     } else {
         _timer->stop();
         _play->newImage(QPixmap(":/Visualization/images/play_up.png"), QPixmap(":/Visualization/images/play_down.png"), tr("Play"));
-        _next->setEnabled(true);
-        _prev->setEnabled(true);
-    }*/
+        _play->scaleToHeight(30);
+    }
 }
 
 void TimeSlider::onNextClicked()
 {
-    /*if(spec->version() == spec->versions() - 1) {
+    if(_slider->value() == _slider->maximum()) {
         // If we're on the last frame and looping is enabled, move to the
         // first frame. Otherwise, do nothing.
         if(_loop->isChecked()) {
@@ -116,15 +120,14 @@ void TimeSlider::onNextClicked()
     } else {
         _slider->triggerAction(QSlider::SliderSingleStepAdd);
     }
-    emit attributeUpdated(spec);
-    */
+    emit timeChanged(_slider->value());
 }
 
 void TimeSlider::onPrevClicked()
 {
-    /*// Current time instead of version
+    // Current time instead of version
     //AttributeSpec* spec = currentAttribute();
-    if(spec->version() == 0) {
+    if(_slider->value() == 0) {
         // If we're on the first frame and looping is enabled, move to the
         // last frame. Otherwise, do nothing.
         if(_loop->isChecked()) {
@@ -133,29 +136,23 @@ void TimeSlider::onPrevClicked()
     } else {
         _slider->triggerAction(QSlider::SliderSingleStepSub);
     }
-    emit attributeUpdated(spec);
-    */
+    emit timeChanged(_slider->value());
 }
 
 void TimeSlider::onFirstClicked()
 {
-/*    // Might need to fetch first time instead of this
-    // The question is absolute time vs. relative time
-    _currentTime->setHMS(0,0,0);
-    emit attributeUpdated(spec);
-*/
+    _slider->setValue(0);
+    emit timeChanged(_slider->value());
 }
 
 void TimeSlider::onLastClicked()
 {
-/*    // Change this to last time
-    _slider->setValue(spec->versions() - 1);
-    emit attributeUpdated(spec);
-*/
+    _slider->setValue(_slider->maximum());
+    emit timeChanged(_slider->value());
 }
 
 void TimeSlider::onIntervalChanged(double val)
-{ /*_timer->setInterval(val * 1000); */}
+{ _timer->setInterval(val); }
 
 // Advance the time slider a certain amount of steps and wraparound if able
 void TimeSlider::advanceTime(int steps) {

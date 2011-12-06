@@ -72,10 +72,11 @@ void MapWidget::onActiveFlightChanged(QString flight)
     updateMap();
 }
 
-void MapWidget::onTimeChanged()
+void MapWidget::onTimeChanged(int idx)
 {
     // Get the new time from the _slider
     // Update the map
+    _currentIndex = idx;
 }
 
 void MapWidget::getNewAttributes()

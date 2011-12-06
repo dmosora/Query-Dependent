@@ -242,7 +242,7 @@ void Visualization::DatabaseStatus(QString sFlightName)
    }
 }
 
-// This function is where we should set up the widgets we will use.
+// Sets up the main map view and widgets associated with it
 void Visualization::createVisualizationUI()
 {
     if(!_map) {
@@ -282,21 +282,45 @@ void Visualization::createVisualizationUI()
         QStringList flights;
         m_dataMgmt.GetLoadedFlights(flights);
         _loadedFlights->addItems(flights);
-        /// Still needs added to the layout!!!
-        /// Might need moved to the timeslider class
+        _toolbar->addWidget(_loadedFlights);
+        _map->setActiveFlight(flights.at(0));
 
-        connect(_loadedFlights,SIGNAL(currentIndexChanged(QString)),_map,SLOT(onActiveFlightChanged(QString)));
-
-        _loadedFlights->setCurrentIndex(0);
+        // Finish setting up the first range of the slider
+        QStringList temp;
+        Data::Buffer buffer;
+        m_dataMgmt.GetDataAttributes(flights.at(0), temp, buffer);
+        _toolbar->setNewMax(buffer._params.size());
 
         // Show the views necessary
         view->show();
         _mapsubwindow->show();
 
         // Make connections for the toolbar
-        connect(_toolbar, SIGNAL(timeChanged()), _map, SLOT(onTimeChanged()));
+        connect(_toolbar, SIGNAL(timeChanged(int)), _map, SLOT(onTimeChanged(int)));
+        connect(_loadedFlights,SIGNAL(currentIndexChanged(QString)),_map,SLOT(onActiveFlightChanged(QString)));
     } else {
+        /// This could be greatly improved by not going through the flights already loaded
         // Add new flights to the map vis
+        int currentItem = _loadedFlights->currentIndex();
+        _loadedFlights->clear();
+
+        QStringList flights;
+        m_dataMgmt.GetLoadedFlights(flights);
+        _loadedFlights->addItems(flights);
+
+        // Update the slider's size to the max
+        for(int i = 0; i < flights.size();i++) {
+            QStringList temp;
+            Data::Buffer buffer;
+            m_dataMgmt.GetDataAttributes(flights.at(i), temp, buffer);
+            _toolbar->setNewMax(buffer._params.size());
+        }
+
+        // Reset the index to what they had selected before
+        _loadedFlights->setCurrentIndex(currentItem);
+
+        // Draw the new paths
+        _map->updateMap();
     }
 }
 
