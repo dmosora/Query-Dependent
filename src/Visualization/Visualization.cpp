@@ -299,6 +299,9 @@ void Visualization::createVisualizationUI()
         m_dataMgmt.GetDataAttributes(flights.at(0), temp, buffer);
         _toolbar->setNewMax(buffer._params.size());
 
+        // Get the first set of data
+        _map->getNewAttributes();
+
         // Show the views necessary
         view->show();
         _mapsubwindow->show();
