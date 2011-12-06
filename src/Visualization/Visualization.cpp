@@ -52,7 +52,7 @@ Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
 {
    ui.setupUi(this);
 
-   
+
    Event::EventDetector evtDetect;
    m_dataMgmt.Connect( sConnectionName );
    m_dataMgmt.SetEventDefinition( evtDetect.GetEventDefinition() );
@@ -249,6 +249,7 @@ void Visualization::createVisualizationUI()
         _map = new MapWidget(this);
         _map->resize(ui.mdiArea->size());
         //_map->updateMap();                 // Dynamic map ONLY
+        _map->setDataMgmt(&m_dataMgmt);
 
         // Make the time slider for this
         _toolbar = new TimeSlider(this);
@@ -274,12 +275,26 @@ void Visualization::createVisualizationUI()
         view->setHorizontalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
         view->setVerticalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
         _map->setMapView(view);
+        _map->setTimeSlider(_toolbar);
+
+        // Add the comboBox and populate it
+        _loadedFlights = new QComboBox(this);
+        QStringList flights;
+        m_dataMgmt.GetLoadedFlights(flights);
+        _loadedFlights->addItems(flights);
+        /// Still needs added to the layout!!!
+        /// Might need moved to the timeslider class
+
+        connect(_loadedFlights,SIGNAL(currentIndexChanged(QString)),_map,SLOT(onActiveFlightChanged(QString)));
+
+        _loadedFlights->setCurrentIndex(0);
 
         // Show the views necessary
         view->show();
         _mapsubwindow->show();
 
         // Make connections for the toolbar
+        connect(_toolbar, SIGNAL(timeChanged()), _map, SLOT(onTimeChanged()));
     } else {
         // Add new flights to the map vis
     }
@@ -328,6 +343,7 @@ void Visualization::OnViewEventGlyph()
    //EventGlyph* event_glyph = new EventGlyph(700, 700, 6);
 
    const Data::EventDatabase& evtDb = m_dataMgmt.GetEventData();
+
 
    // Set the max lines data.
    event_glyph->SetMaxLines( evtDb._def._maxValues );

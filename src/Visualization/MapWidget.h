@@ -55,10 +55,6 @@ private:
 
 // The Architecture of this class is MapWidget controls the MapArea in a scene
 // - The Scene will hold all the drawing things, like the trail and plane
-// TODO:
-// - Needs logic to find coordinates in view and draw the plane
-// - Buffer system to load all previous points and build a path from past data
-// - More interaction with timeslider
 class MapWidget : public QWidget
 {
     Q_OBJECT
@@ -69,6 +65,8 @@ public:
 
     // For visualizing and adding things to the scene's view
     void setMapView(QGraphicsView* view);
+    void setTimeSlider(TimeSlider* slider);
+    void setDataMgmt(Data::DataMgmt* Mgmt) { m_dataMgmt = Mgmt; }
 
     // Drawing related methods
     void getFlightData();
@@ -83,25 +81,36 @@ public:
 signals:
 
 public slots:
+    void onActiveFlightChanged(QString);
+    void onTimeChanged();
 
 protected:
     virtual void resizeEvent(QResizeEvent* event);
 
 private:
+    // Data update method
+    void getNewAttributes();
+
     // View components
     QGraphicsScene* _scene;
     QGraphicsView*  _view;          // The view in which this map is contained in the MDI
     MapArea*        _mapArea;
+    TimeSlider*     _slider;        // For access to current time
 
     // Background map
     QPixmap*        _picMap;        // For static map
 
     // Drawing related things
-    QStringList*    _flights;
     double          _latStart;
     double          _lonStart;
     double          _latEnd;
     double          _lonEnd;
+
+    // Data
+    QStringList         _flights;
+    QString             _activeFlight;
+    QList<QStringList>  _loadedAttributes;
+    Data::DataMgmt*      m_dataMgmt;
 };
 
 #endif // MAPWIDGET_H

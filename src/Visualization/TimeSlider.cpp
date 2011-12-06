@@ -9,13 +9,8 @@ TimeSlider::TimeSlider(QWidget* parent) : QToolBar(parent)
 
     // Set num equal to the first time field and add it so it will wrap around
     // to an actual time value.
-<<<<<<< HEAD
     double num;
     _currentTime += num;
-=======
-    int num = 0;
-    _currentTime->addSecs(num);
->>>>>>> d6e140cca27d6160d18211d518ad7a6ff4e9976b
 
     // Initialize all the other attributes and set up the images
     _slider = new QSlider(Qt::Horizontal,this);

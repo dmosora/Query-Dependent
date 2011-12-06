@@ -19,6 +19,7 @@
 #include <QtGui/QMainWindow>
 #include <QDockWidget>
 #include <QGraphicsView>
+#include <QComboBox>
 #include "ui_Visualization.h"
 
 #include "DataMgmt.h"
@@ -88,6 +89,7 @@ private:
    QVBoxLayout*    _mapAndSlider;
    QWidget*        _mdiMapWidget;
    TimeSlider*     _toolbar;
+   QComboBox*      _loadedFlights;
 
    Parser::CsvParser     m_csvParser; //!< Class to parse CSV files
    Data::DataMgmt        m_dataMgmt;  //!< Abstraction of the data management
