@@ -33,18 +33,18 @@ class AircraftOverlay : public QGraphicsItem
 public:
     AircraftOverlay(QGraphicsItem* parent = 0, QGraphicsScene* scene = 0);
 
-    void setLocationData(QVariant lat, QVariant lon) { _lat = lat; _lon = lon; }
+    void setLocationData(double lat, double lon) { _lat = lat; _lon = lon; }
     QPoint gpsToPixels(double lat, double lon);
 
-    QRectF boundingRect() const { return QRectF(0, 0, 40, 32); }
+    QRectF boundingRect() const { return QRectF(0, 0, 50, 40); }
 
     void paint(QPainter *painter,
                const QStyleOptionGraphicsItem *option,
                QWidget *widget);
 
 private:
-    QVariant _lat;
-    QVariant _lon;
+    double _lat;
+    double _lon;
 
     QPixmap* _image;
 };
@@ -55,10 +55,12 @@ class FlightPath : public QGraphicsItem
 public:
     FlightPath(QGraphicsItem *parent = 0);
 
-    void setLocationData(const Data::Point* lat, const Data::Point* lon)
-    { _lat = lat; _lon = lon; }
+    void setLocationData(const QList<Data::Point>* coords)
+    { _coords = coords; }
 
-    void setFinalIndex(int idx) { _finalIndex = idx; }
+    void setFinalIndex(int idx) { if(idx < _coords->size()) _finalIndex = idx; }
+
+    QPoint gpsToPixels(double lat, double lon);
 
     QRectF boundingRect() const { return QRectF(0, 0, 587, 511); }
 
@@ -67,9 +69,8 @@ public:
                QWidget *widget);
 
 private:
-    int              _finalIndex;
-    const Data::Point*     _lat;
-    const Data::Point*     _lon;
+    int                           _finalIndex;
+    const QList<Data::Point>*     _coords;
 
 };
 

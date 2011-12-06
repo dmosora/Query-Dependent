@@ -12,28 +12,36 @@ void AircraftOverlay::paint(QPainter *painter,
            QWidget *widget)
 {
     // Convert coordinates to pixels and shift them for the drawPixmap operation
-    QPoint point = gpsToPixels(_lat.toString().toDouble(), _lon.toString().toDouble());
+    QPoint point = gpsToPixels(_lat, _lon);
 
-    point.setX(point.x() - 25);
-    point.setY(point.y() - 20);
+    // Fudging the landing position a bit here
+    point.setX(point.x() - 40);
+    point.setY(point.y() + 50);
 
     // Debug
-    std::cerr << "Drawing plane at " << point.x() << " , " << point.y() << std::endl;
+    //std::cerr << "Drawing plane at " << point.x() << " , " << point.y() << std::endl;
 
-    painter->drawPixmap(point, *_image);
+    painter->drawPixmap(point.y(), point.x(), *_image);
 }
 
 QPoint AircraftOverlay::gpsToPixels(double lat, double lon) {
     QPoint point;
 
-    double latRange = _latStart - _latEnd;
+    double latRange = _latEnd - _latStart;
     if(latRange < 0) latRange = -latRange;
 
-    double lonRange = _lonStart - _lonEnd;
+    double latOffset = lat - _latStart;
+    if(latOffset < 0) latOffset = -latOffset;
+
+    double lonRange = _lonEnd - _lonStart;
     if(lonRange < 0) lonRange = -lonRange;
 
-    point.setX((lat/latRange) * 587);
-    point.setY((lon/lonRange) * 511);
+    double lonOffset = lon - _lonStart;
+    if(lonOffset < 0) lonOffset = -lonOffset;
+
+    point.setX(double(latOffset/latRange) * 587.0);
+    point.setY(double(lonOffset/lonRange) * 511.0);
+    return point;
 }
 
 //***********************************
@@ -46,6 +54,37 @@ void FlightPath::paint(QPainter *painter,
            QWidget *widget)
 {
     // Implement the drawing of the path itself here
+    // Go through the data and draw a dot for each coordinate
+    for(int i = 0;i < _finalIndex;i++) {
+        // Convert coordinates to pixels and shift them for the drawPixmap operation
+        QPoint point = gpsToPixels(_coords->at(i)._dataVector[0].toDouble(), _coords->at(i)._dataVector[1].toDouble());
+
+        // Fudging the position a bit here (again)
+        point.setX(point.x() - 40);
+        point.setY(point.y() + 50);
+
+        painter->setPen(QColor::fromHsv(300,255,255));
+        painter->drawEllipse(point.y(), point.x(), 15, 15);
+    }
+}
+
+QPoint FlightPath::gpsToPixels(double lat, double lon) {
+    QPoint point;
+
+    double latRange = _latEnd - _latStart;
+    if(latRange < 0) latRange = -latRange;
+
+    double latOffset = lat - _latStart;
+    if(latOffset < 0) latOffset = -latOffset;
+
+    double lonRange = _lonEnd - _lonStart;
+    if(lonRange < 0) lonRange = -lonRange;
+
+    double lonOffset = lon - _lonStart;
+    if(lonOffset < 0) lonOffset = -lonOffset;
+
+    point.setX(double(latOffset/latRange) * 587.0);
+    point.setY(double(lonOffset/lonRange) * 511.0);
 }
 
 //***********************************
@@ -124,16 +163,19 @@ void MapWidget::drawMapVis()
 {
     // Zero out old paths and plane cause they have been removed from the view
     if(_plane) delete _plane; _plane = 0;
-    _paths.clear();
+    //_paths.clear();
 
     // Draw flight paths here
     for(int i = 0;i < _flights.size(); i++) {
-        drawFlightPath(_flights[i], i);
+        //drawFlightPath(_flights[i], i);
     }
+
 
     // Draw active plane here
     drawPlane(_activeFlight, _activeFlightIdx);
 }
+
+// Should be an "add flight path" and a "draw flight path"
 
 // Draw the data up to the current time in dots
 void MapWidget::drawFlightPath(QString flight_id, int index)
@@ -142,7 +184,7 @@ void MapWidget::drawFlightPath(QString flight_id, int index)
     FlightPath* path = new FlightPath();
 
     // Set its data and index
-    path->setLocationData(&_loadedFlightsData.at(index)._params.at(0),&_loadedFlightsData.at(index)._params.at(1));
+    path->setLocationData(&_loadedFlightsData.at(index)._params);
 
     // Set its location in the view
     path->setPos(0,0);
@@ -161,9 +203,13 @@ void MapWidget::drawPlane(QString flight_id, int index)
     _plane = new AircraftOverlay();
 
     // Set its coordinates
-    if(_currentIndex <= _loadedFlightsData.at(index)._params.at(1)._dataVector.size())
-        _plane->setLocationData(&_loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(0),
-                                &_loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(1));
+    if(_currentIndex >= _loadedFlightsData.at(index)._params.size())
+        _currentIndex = _loadedFlightsData.at(index)._params.size() - 1;
+
+     _plane->setLocationData(_loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(0).toDouble(),
+                             _loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(1).toDouble());
+     //_plane->setPos(_plane->gpsToPixels(_loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(0).toDouble(),
+     //                                   _loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(1).toDouble()));
 
     // Make it draw
     _scene->addItem(_plane);
