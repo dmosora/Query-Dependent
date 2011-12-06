@@ -31,7 +31,7 @@ TimeSlider::TimeSlider(QWidget* parent) : QToolBar(parent)
     _delay->setStyleSheet(QString("QLabel { color : black; }"));
     _delay->newToolTip(tr("Time in milliseconds between frames on playback."));
     _interval = new QDoubleSpinBox();
-    _interval->setRange(1, 500);
+    _interval->setRange(1, 20);
     _interval->setDecimals(0);
     _interval->setSingleStep(1);
     _interval->setValue(2);

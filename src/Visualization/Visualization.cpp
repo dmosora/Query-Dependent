@@ -281,7 +281,15 @@ void Visualization::createVisualizationUI()
         _loadedFlights = new QComboBox(this);
         QStringList flights;
         m_dataMgmt.GetLoadedFlights(flights);
-        _loadedFlights->addItems(flights);
+
+        // Add items one at a time so we can color code them
+        for(int i = 0; i < flights.size();i++) {
+            QPixmap pic(40,40);
+            pic.fill(QColor::fromHsv((100 * i) % 360,255,230,150));
+            QIcon icon(pic);
+            _loadedFlights->addItem(icon,flights[i]);
+        }
+
         _toolbar->addWidget(_loadedFlights);
         _map->setActiveFlight(flights.at(0));
 
@@ -307,7 +315,14 @@ void Visualization::createVisualizationUI()
 
         QStringList flights;
         m_dataMgmt.GetLoadedFlights(flights);
-        _loadedFlights->addItems(flights);
+
+        // Add items one at a time so we can color code them
+        for(int i = 0; i < flights.size();i++) {
+            QPixmap pic(40,40);
+            pic.fill(QColor::fromHsv((100 * i) % 360,255,230,150));
+            QIcon icon(pic);
+            _loadedFlights->addItem(icon,flights[i]);
+        }
 
         // Update the slider's size to the max
         for(int i = 0; i < flights.size();i++) {

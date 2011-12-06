@@ -64,6 +64,9 @@ public:
         else _finalIndex = _coords->size() - 1;
     }
 
+    // Flight index is used to randomize colors
+    void setFlightIndex(int idx) { _flightIndex = idx; }
+
     QPoint gpsToPixels(double lat, double lon);
 
     QRectF boundingRect() const { return QRectF(0, 0, 587, 511); }
@@ -75,6 +78,7 @@ public:
 private:
     int                           _finalIndex;
     const QList<Data::Point>*     _coords;
+    int                           _flightIndex;
 
 };
 

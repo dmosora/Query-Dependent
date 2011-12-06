@@ -63,7 +63,7 @@ void FlightPath::paint(QPainter *painter,
     QPen pen;
     pen = painter->pen();
     pen.setWidth(5);
-    pen.setColor(QColor::fromHsv(0,255,230,150));
+    pen.setColor(QColor::fromHsv((100 * _flightIndex) % 360,255,230,200));
     painter->setPen(pen);
 
     for(int i = 0;i < _finalIndex;i += 80) {
@@ -172,7 +172,7 @@ void MapWidget::setTimeSlider(TimeSlider* slider)
 void MapWidget::updateMap()
 {
     // Big if to speed it up by removing some of the calculating
-    if(_currentIndex % 20 == 0) {
+    if(_currentIndex % 10 == 0) {
         // Clear the drawing space
         // Remove the Aircraft Overlay object
         if(_plane) _scene->removeItem(_plane);
@@ -195,7 +195,6 @@ void MapWidget::drawMapVis()
     _paths.clear();
 
     // Draw flight paths here
-    std::cerr << "Loaded flights size is " << _loadedFlightsData.size() << std::endl;
     int i = 0;
     for(;i < _loadedFlightsData.size(); i++) {
             drawFlightPath(_flights[i], i);
@@ -212,12 +211,12 @@ void MapWidget::drawFlightPath(QString flight_id, int index)
 {
     // Create a new FlightPath
     FlightPath* path = new FlightPath();
-std::cerr << "Failure check ***3***\n";
-std::cerr << "Index is " << index << " for flight " << flight_id.toStdString() << std::endl;
+
     // Set its data and index
     path->setLocationData(&_loadedFlightsData.at(index)._params);
     path->setFinalIndex(_currentIndex);
-    //std::cerr << "Does it make it here? \n";
+    path->setFlightIndex(index);
+
     // Set its location in the view
     path->setPos(0,0);
 
@@ -240,8 +239,6 @@ void MapWidget::drawPlane(QString flight_id, int index)
 
      _plane->setLocationData(_loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(0).toDouble(),
                              _loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(1).toDouble());
-     //_plane->setPos(_plane->gpsToPixels(_loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(0).toDouble(),
-     //                                   _loadedFlightsData.at(index)._params.at(_currentIndex)._dataVector.at(1).toDouble()));
 
     // Make it draw
     _scene->addItem(_plane);
