@@ -19,6 +19,12 @@ void RTGlyphGraphicsView::resizeEvent(QResizeEvent *event)
 	QGraphicsView::resizeEvent(event);
 }
 
+void RTGlyphGraphicsView::CorrectResize(int x_res, int y_res)
+{
+    parent_glyph->RedrawLabelsOnResize(x_res, y_res);
+    QGraphicsView::resizeEvent(0);
+}
+
 // * * * * * * * * * * * * * * * * *
 	// * * * * * * * 
 // GlyphAxisItem
@@ -90,7 +96,7 @@ RealTimeGlyph::RealTimeGlyph(const int x_res, const int y_res, const int number_
 	glyph_view->setRenderHint(QPainter::Antialiasing);
 		//setting scene object size
 	//glyph_scene->setSceneRect(0, 0, x_res, y_res);
-	//glyph_view->setFixedSize(x_res, y_res);
+        //glyph_view->setFixedSize(x_res, y_res);
 		//calling the background line drawing method
 	DrawGlyphBackground();
 }
@@ -141,7 +147,7 @@ void RealTimeGlyph::DrawGlyphBackground(void)
 
 // * * * * * * * * * * * * * * * * *
 
-void RealTimeGlyph::DrawPointSet(const std::vector<float>& data)
+void RealTimeGlyph::DrawPointSet(const QList<QVariant>& data)
 {
 	ClearGlyph();
 	if((int)data.size() == number_of_attributes)
@@ -149,10 +155,10 @@ void RealTimeGlyph::DrawPointSet(const std::vector<float>& data)
 		std::vector<std::pair<float, float> > draw_points;
 		for(int i=0; i<number_of_attributes; ++i)
 		{
-			if(data[i] != -1)
+                       if(data[i].toFloat() != -1)
 			{
-				float x_draw = (x_resolution/2) + data[i]*radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
-				float y_draw = (y_resolution/2) + data[i]*radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+                                float x_draw = (x_resolution/2) + data[i].toFloat()*radius*std::cos(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
+                                float y_draw = (y_resolution/2) + data[i].toFloat()*radius*std::sin(((double)i*2.0*RTGlyph::glyph_pi)/(double)number_of_attributes + (3.0*RTGlyph::glyph_pi/2.0));
 				draw_points.push_back(std::pair<float, float>(x_draw, y_draw));
 			}
 			else
@@ -166,7 +172,7 @@ void RealTimeGlyph::DrawPointSet(const std::vector<float>& data)
 		{
 			QGraphicsLineItem* temp_line = new QGraphicsLineItem(0, glyph_scene);
 			temp_line->setLine(draw_points[i].first, draw_points[i].second, draw_points[i+1].first, draw_points[i+1].second);
-			if(data[i] == -1 || data[i+1] == -1)
+                       if(data[i].toFloat() == -1 || data[i+1].toFloat() == -1)
 			{
 				QPen glyph_pen(QColor(40,95,150,255),4);
 				glyph_pen.setStyle(Qt::DotLine);
@@ -178,7 +184,7 @@ void RealTimeGlyph::DrawPointSet(const std::vector<float>& data)
 		}
 		QGraphicsLineItem* temp_line = new QGraphicsLineItem(0, glyph_scene);
 		temp_line->setLine(draw_points[number_of_attributes-1].first, draw_points[number_of_attributes-1].second, draw_points[0].first, draw_points[0].second);
-		if(data[number_of_attributes-1] == -1 || data[0] == -1)
+               if(data[number_of_attributes-1].toFloat() == -1 || data[0].toFloat() == -1)
 		{
 			QPen glyph_pen(QColor(40,95,150,255),4);
 			glyph_pen.setStyle(Qt::DotLine);
@@ -189,7 +195,7 @@ void RealTimeGlyph::DrawPointSet(const std::vector<float>& data)
 		line_set.push_back(temp_line);
 		for(int i=0; i<number_of_attributes; ++i)
 		{
-			if(data[i] != -1)
+                        if(data[i].toFloat() != -1)
 			{
 				QGraphicsEllipseItem* temp_point = new QGraphicsEllipseItem(0, glyph_scene);
 				temp_point->setRect(draw_points[i].first-10, draw_points[i].second-10, 20, 20);
@@ -275,7 +281,7 @@ void RealTimeGlyph::ShowGlyph(void)
 
 // * * * * * * * * * * * * * * * * *
 
-QGraphicsView* RealTimeGlyph::GetGlyphView(void)
+RTGlyphGraphicsView* RealTimeGlyph::GetGlyphView(void)
 {
 	return glyph_view;
 }

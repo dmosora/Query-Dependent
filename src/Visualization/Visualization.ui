@@ -43,7 +43,7 @@
      <x>0</x>
      <y>0</y>
      <width>707</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -69,6 +69,7 @@
     <addaction name="actionParallel_Coordinates"/>
     <addaction name="actionTable"/>
     <addaction name="actionEvent_Glyph"/>
+    <addaction name="actionReal_Time_Glyph"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -166,6 +167,11 @@
   <action name="actionEvent_Glyph">
    <property name="text">
     <string>Event Glyph</string>
+   </property>
+  </action>
+  <action name="actionReal_Time_Glyph">
+   <property name="text">
+    <string>Real Time Glyph</string>
    </property>
   </action>
  </widget>

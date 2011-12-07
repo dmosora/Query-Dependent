@@ -33,6 +33,7 @@
 #include "Chart_ParallelCoordinates.h"
 #include "seansGlyphCode/EventGlyph.h"
 #include "Visualization.h"
+#include "DataNormalizer.h"
 
 
 //const QString sConnectionName = "Database.db";
@@ -92,6 +93,9 @@ Visualization::Visualization(QWidget *parent, Qt::WFlags flags)
    connect
       ( ui.actionEvent_Glyph,          SIGNAL(triggered())
       , this,                          SLOT(OnViewEventGlyph()) );
+   connect
+      ( ui.actionReal_Time_Glyph,      SIGNAL(triggered())
+       , this,                         SLOT(OnViewRealTimeGlyph()) );
    // -------------------------------------------------------------------------
 
    // -------------------------------------------------------------------------
@@ -325,7 +329,7 @@ void Visualization::createVisualizationUI()
         // Add items one at a time so we can color code them
         for(int i = 0; i < flights.size();i++) {
             QPixmap pic(40,40);
-            pic.fill(QColor::fromHsv((100 * i) % 360,255,230,150));
+            pic.fill(QColor::fromHsv((100 * (i)) % 360,255,230,200));
             QIcon icon(pic);
             _loadedFlights->addItem(icon,flights[i]);
         }
@@ -430,4 +434,80 @@ void Visualization::OnViewParallelCoordinates()
    subwindow->setAttribute( Qt::WA_DeleteOnClose );
    subwindow->resize(DefaultWindowSize);
    subwindow->show();
+}
+
+void Visualization::OnViewRealTimeGlyph()
+{
+    QStringList flights;
+    m_dataMgmt.GetLoadedFlights(flights);
+
+    for(int i = 0; i < flights.size(); i++) {
+        Data::Selections atts = m_attrSel.GetSelectedAttributes();
+        QMap<QString, QStringList>::const_iterator iter = atts.find(flights[i]);
+        QStringList attNames = iter.value();
+        RealTimeGlyph* rt_glyph = new RealTimeGlyph(DefaultWindowSize.width(), DefaultWindowSize.height()-30, attNames.size());
+        //EventGlyph* event_glyph = new EventGlyph(700, 700, 6);
+
+        // Set attributes' data in glyph
+        Data::Buffer buffer;
+        m_dataMgmt.GetDataAttributes(flights[i],attNames, buffer);
+        Data::Normalizer norm;
+        norm.Process(buffer);
+        /*QList<QVariant> stuff = buffer._params.at(_toolbar->slider()->value())._dataVector;
+        std::vector<float> attValues;
+        for(int j = 0; j < stuff.size();j++) {
+            attValues.push_back(stuff[j].toDouble());
+        }*/
+
+        std::vector<std::string> labels;
+        for(int i = 0;i < attNames.size();i++) {
+            labels.push_back(attNames.at(i).toStdString());
+        }
+
+        rt_glyph->DrawPointSet(buffer._params.at(_toolbar->slider()->value())._dataVector);
+
+        // Set the max lines data.
+        rt_glyph->SetAxisLabels( labels );
+
+        QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(rt_glyph->GetGlyphView());
+        subwindow->setWindowTitle(QApplication::translate("VisualizationClass", "Event Glyph", 0, QApplication::UnicodeUTF8));
+        subwindow->setAttribute( Qt::WA_DeleteOnClose );
+        subwindow->resize(DefaultWindowSize);
+        subwindow->setFixedSize(subwindow->width(),subwindow->height());
+        subwindow->show();
+        rt_glyph->GetGlyphView()->CorrectResize(subwindow->width(),subwindow->height());
+
+        _rtGlyphs.push_back(rt_glyph);
+        _buffers.push_back(buffer);
+
+        connect(_toolbar, SIGNAL(timeChanged(int)), SLOT(onTimeChanged(int)));
+    }
+}
+
+void Visualization::onTimeChanged(int idx)
+{
+    if(idx % 15 == 0) {
+        QStringList flights;
+        m_dataMgmt.GetLoadedFlights(flights);
+
+        for(int i = 0; i < _rtGlyphs.size(); i++) {
+            Data::Selections atts = m_attrSel.GetSelectedAttributes();
+            RealTimeGlyph* rt_glyph = _rtGlyphs[i];
+            //EventGlyph* event_glyph = new EventGlyph(700, 700, 6);
+
+            // Set attributes in glyph
+            QMap<QString, QStringList>::const_iterator iter = atts.find(flights[i]);
+            QStringList attNames = iter.value();
+            Data::Buffer buffer;
+            m_dataMgmt.GetDataAttributes(flights[i],attNames, buffer);
+            /*QList<QVariant> stuff = _buffers.at(i)._params.at(idx)._dataVector;
+            std::vector<float> attValues;
+            for(int j = 0; j < stuff.size();j++) {
+                attValues.push_back(stuff[j].toDouble());
+            }*/
+
+            rt_glyph->DrawPointSet(_buffers.at(i)._params.at(idx)._dataVector);
+            //rt_glyph->GetGlyphView()->CorrectResize();
+        }
+    }
 }

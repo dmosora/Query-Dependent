@@ -270,6 +270,7 @@ void MapWidget::onTimeChanged(int idx)
 void MapWidget::getNewAttributes()
 {
     _loadedFlightsData.clear();
+    _flights.clear();
 
     // Get the currently loaded flight names
     m_dataMgmt->GetLoadedFlights(_flights);

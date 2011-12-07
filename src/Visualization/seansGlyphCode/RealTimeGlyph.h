@@ -11,6 +11,8 @@
 #include <QtGui/QPen>
 #include <QtGui/QLabel>
 #include <QtGui/QFont>
+#include <QList>
+#include <QVariant>
 // * * *
 #include <deque>
 #include <map>
@@ -33,6 +35,7 @@ class RTGlyphGraphicsView : public QGraphicsView
 {
 public:
 	RTGlyphGraphicsView(QGraphicsScene* scene, RealTimeGlyph* glyph);
+        void CorrectResize(int, int);
 protected:
 	void resizeEvent(QResizeEvent *event);
 private:
@@ -65,20 +68,20 @@ public:
 	RealTimeGlyph(const int x_res, const int y_res, const int number_of_variables);
 	~RealTimeGlyph(void);
 
-	void DrawPointSet(const std::vector<float>& data);
+        void DrawPointSet(const QList<QVariant>& data);
 	void ClearGlyph(void);
 	void SetAttributeNumber(const int number_of_variables);
 	void SetAxisLabels(const std::vector<std::string>& axis_names);
 
 	void ShowGlyph(void);
-	QGraphicsView* GetGlyphView(void);
+        RTGlyphGraphicsView* GetGlyphView(void);
 
 	void RedrawLabelsOnResize(const int x_res, const int y_res);
 
 private:
 	void DrawGlyphBackground(void);
 	QGraphicsScene *glyph_scene;
-	QGraphicsView *glyph_view;
+        RTGlyphGraphicsView *glyph_view;
 	QLabel *axis_label;
 	std::deque<QLabel*> name_labels;
 

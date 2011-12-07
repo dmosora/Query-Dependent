@@ -27,6 +27,7 @@
 #include "CsvParser.h"
 #include "DockWidgetAttributes.h"
 #include "MapWidget.h"
+#include "seansGlyphCode/RealTimeGlyph.h"
 
 
 // Forward declarations.
@@ -75,6 +76,11 @@ protected slots:
    //! Slot that opens a event glyph.
    void OnViewEventGlyph();
 
+   //! Slot that opens a real time glyph
+   void OnViewRealTimeGlyph();
+
+   void onTimeChanged(int);
+
 private:
    //! Loads a single flight.
    void LoadFlight( const QString& filename );
@@ -90,6 +96,10 @@ private:
    QWidget*        _mdiMapWidget;
    TimeSlider*     _toolbar;
    QComboBox*      _loadedFlights;
+
+   // Real Time glyphs
+   QList<RealTimeGlyph*>        _rtGlyphs;
+   QList<Data::Buffer>   _buffers;
 
    Parser::CsvParser     m_csvParser; //!< Class to parse CSV files
    Data::DataMgmt        m_dataMgmt;  //!< Abstraction of the data management

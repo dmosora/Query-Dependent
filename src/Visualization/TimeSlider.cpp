@@ -26,7 +26,7 @@ TimeSlider::TimeSlider(QWidget* parent) : QToolBar(parent)
 
     // Layout for Playback options
     _loop = new QCheckBox(tr("Loop"), this);
-    _delay = new LinkLabel(tr("Delay (ms):"));
+    _delay = new LinkLabel(tr("Delay:"));
     _delay->setEnabled(false);
     _delay->setStyleSheet(QString("QLabel { color : black; }"));
     _delay->newToolTip(tr("Time in milliseconds between frames on playback."));

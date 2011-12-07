@@ -702,6 +702,7 @@ QGraphicsView* EventGlyph::GetGlyphView(void)
 void EventGlyph::RedrawLabelsOnResize(const int x_res, const int y_res)
 {
 	set_label->setMinimumWidth(x_res);
+        set_label->setMaximumWidth(x_res);
 	std::deque<QLabel*>::iterator iter = name_labels.begin();
 	for(int i=0; i<number_of_attributes; ++i)
 	{

@@ -25,6 +25,7 @@ public:
 
     // Do we need a time class to return?
     double currentTime();
+    QSlider*    slider() { return _slider; }
 
     void setNewMax(int max);
 
