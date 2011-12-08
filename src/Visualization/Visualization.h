@@ -99,7 +99,8 @@ private:
 
    // Real Time glyphs
    QList<RealTimeGlyph*>        _rtGlyphs;
-   QList<Data::Buffer>   _buffers;
+   //QList<Data::Buffer>   _buffers;
+   QMap<QString,Data::Buffer> _buffers;     // New implementation for just current flight
    QStringList           _flights;
 
    Parser::CsvParser     m_csvParser; //!< Class to parse CSV files

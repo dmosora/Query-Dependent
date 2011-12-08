@@ -441,86 +441,108 @@ void Visualization::OnViewParallelCoordinates()
    subwindow->show();
 }
 
+// Possible problem with this implementation:
+// If a person changes the attributes selected, we need to
+//     retreieve another buffer on time changed
 void Visualization::OnViewRealTimeGlyph()
 {
     QStringList flights;
     m_dataMgmt.GetLoadedFlights(flights);
 
+    // Create a buffer for each of the currently loaded flights for switching
     for(int i = 0; i < flights.size(); i++) {
+        // Get the attribute labels that are selected
         Data::Selections atts = m_attrSel.GetSelectedAttributes();
         QMap<QString, QStringList>::const_iterator iter = atts.find(flights[i]);
+
         if( iter != atts.end() )
         {
            QStringList attNames = iter.value();
-           RealTimeGlyph* rt_glyph = new RealTimeGlyph(DefaultWindowSize.width(), DefaultWindowSize.height()-30, attNames.size());
-           //EventGlyph* event_glyph = new EventGlyph(700, 700, 6);
 
-           // Set attributes' data in glyph
+           // Get attributes' data for glyph
            Data::Buffer buffer;
            m_dataMgmt.GetDataAttributes(flights[i],attNames, buffer);
            Data::Normalizer norm;
            norm.Process(buffer);
-           /*QList<QVariant> stuff = buffer._params.at(_toolbar->slider()->value())._dataVector;
-           std::vector<float> attValues;
-           for(int j = 0; j < stuff.size();j++) {
-               attValues.push_back(stuff[j].toDouble());
-           }*/
 
-           std::vector<std::string> labels;
-           for(int j = 0;j < attNames.size();j++) {
-               labels.push_back(attNames.at(j).toStdString());
-           }
+           // Pair up the buffer with its flight_id
+           //QPair<QString, Data::Buffer> pair(flights[i],buffer);
 
-           rt_glyph->DrawPointSet(buffer._params.at(_toolbar->slider()->value())._dataVector);
-
-           // Set the max lines data.
-           rt_glyph->SetAxisLabels( labels );
-
-           QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(rt_glyph->GetGlyphView());
-           subwindow->setWindowTitle(QApplication::translate("VisualizationClass", qPrintable(flights[i]), 0, QApplication::UnicodeUTF8));
-           subwindow->setAttribute( Qt::WA_DeleteOnClose );
-           subwindow->resize(DefaultWindowSize);
-           subwindow->setFixedSize(subwindow->width(),subwindow->height());
-           subwindow->show();
-           rt_glyph->GetGlyphView()->CorrectResize(subwindow->width(),subwindow->height());
-
-           _rtGlyphs.push_back(rt_glyph);
-           _buffers.push_back(buffer);
-           _flights.push_back(flights[i]);
-
-           connect(_toolbar, SIGNAL(timeChanged(int)), SLOT(onTimeChanged(int)));
+           _buffers.insert(flights[i],buffer);
         }
     }
+
+    // Actually make a glyph and add it
+    // Get the current atts selected
+    Data::Selections atts = m_attrSel.GetSelectedAttributes();
+    QMap<QString, QStringList>::const_iterator iter = atts.find(_loadedFlights->currentText());
+
+    // Pull up the preloaded buffer
+    QMap<QString, Data::Buffer>::iterator b_iter = _buffers.find(_loadedFlights->currentText());
+    Data::Buffer buffer = b_iter.value();
+
+    QStringList attNames = iter.value();
+
+    // Create the object
+    RealTimeGlyph* rt_glyph = new RealTimeGlyph(DefaultWindowSize.width(), DefaultWindowSize.height()-30, attNames.size());
+
+    // Get the labels and put them in a form we can use
+    std::vector<std::string> labels;
+    for(int j = 0;j < attNames.size();j++) {
+        labels.push_back(attNames.at(j).toStdString());
+    }
+
+    // Set the max lines data.
+    rt_glyph->SetAxisLabels( labels );
+
+    // Draw the current point set
+    rt_glyph->DrawPointSet(buffer._params.at(_toolbar->slider()->value())._dataVector);
+
+    QMdiSubWindow* subwindow = ui.mdiArea->addSubWindow(rt_glyph->GetGlyphView());
+    subwindow->setWindowTitle(QApplication::translate("VisualizationClass", qPrintable(_loadedFlights->currentText()), 0, QApplication::UnicodeUTF8));
+    subwindow->setAttribute( Qt::WA_DeleteOnClose );
+    subwindow->resize(DefaultWindowSize);
+    subwindow->setFixedSize(subwindow->width(),subwindow->height());
+    subwindow->show();
+    rt_glyph->GetGlyphView()->CorrectResize(subwindow->width(),subwindow->height());
+
+    _rtGlyphs.push_back(rt_glyph);
+    connect(_toolbar, SIGNAL(timeChanged(int)), SLOT(onTimeChanged(int)));
 }
 
 void Visualization::onTimeChanged(int idx)
 {
     if(idx % 15 == 0) {
-
-        for(int i = 0; i < _rtGlyphs.size(); i++) {
             Data::Selections atts = m_attrSel.GetSelectedAttributes();
-            RealTimeGlyph* rt_glyph = _rtGlyphs[i];
+            RealTimeGlyph* rt_glyph = _rtGlyphs[0];             // Should only be one in this implementation
             //EventGlyph* event_glyph = new EventGlyph(700, 700, 6);
 
             // Set attributes in glyph
-            QMap<QString, QStringList>::const_iterator iter = atts.find(_flights[i]);
+            QMap<QString, QStringList>::const_iterator iter = atts.find(_loadedFlights->currentText());
             if( iter != atts.end() )
             {
                QStringList attNames = iter.value();
-               Data::Buffer buffer;
-               m_dataMgmt.GetDataAttributes(_flights[i],attNames, buffer);
+               QMap<QString, Data::Buffer>::iterator b_iter = _buffers.find(_loadedFlights->currentText());
+               Data::Buffer buffer = b_iter.value();
+               //m_dataMgmt.GetDataAttributes(_flights[i],attNames, buffer);
                /*QList<QVariant> stuff = _buffers.at(i)._params.at(idx)._dataVector;
                std::vector<float> attValues;
                for(int j = 0; j < stuff.size();j++) {
                    attValues.push_back(stuff[j].toDouble());
                }*/
 
-               if( idx < _buffers.at(i)._params.size() )
+               // Make sure the labels are current to the selection
+               std::vector<std::string> labels;
+               for(int j = 0;j < attNames.size();j++) {
+                   labels.push_back(attNames.at(j).toStdString());
+               }
+               rt_glyph->SetAxisLabels( labels );
+
+               if( idx < buffer._params.size() )
                {
-                  rt_glyph->DrawPointSet(_buffers.at(i)._params.at(idx)._dataVector);
+                  rt_glyph->DrawPointSet(buffer._params.at(idx)._dataVector);
                   //rt_glyph->GetGlyphView()->CorrectResize();
                }
             }
-        }
     }
 }
