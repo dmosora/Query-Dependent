@@ -67,14 +67,16 @@ void FlightPath::paint(QPainter *painter,
     painter->setPen(pen);
 
     for(int i = 0;i < _finalIndex;i += 80) {
-        // Convert coordinates to pixels and shift them for the drawPixmap operation
-        QPoint point = gpsToPixels(_coords->at(i)._dataVector[0].toDouble(), _coords->at(i)._dataVector[1].toDouble());
+       if( i < _coords->size() ) {
+           // Convert coordinates to pixels and shift them for the drawPixmap operation
+           QPoint point = gpsToPixels(_coords->at(i)._dataVector[0].toDouble(), _coords->at(i)._dataVector[1].toDouble());
 
-        // Fudging the position a bit here (again)
-        point.setX(point.x() - 22);
-        point.setY(point.y() + 65);
+           // Fudging the position a bit here (again)
+           point.setX(point.x() - 22);
+           point.setY(point.y() + 65);
 
-        painter->drawEllipse(point.y(), point.x(), 5, 5);
+           painter->drawEllipse(point.y(), point.x(), 5, 5);
+       }
     }
 /*
     QPen pen;
@@ -230,6 +232,8 @@ void MapWidget::drawFlightPath(QString flight_id, int index)
 // Draw the plane icon at the current time
 void MapWidget::drawPlane(QString flight_id, int index)
 {
+   if( index >= 0 && index < _loadedFlightsData.size() )
+   {
     // Create a new AircraftOverlay
     _plane = new AircraftOverlay();
 
@@ -243,6 +247,7 @@ void MapWidget::drawPlane(QString flight_id, int index)
     // Make it draw
     _scene->addItem(_plane);
     _plane->show();
+   }
 }
 
 void MapWidget::onActiveFlightChanged(QString flight)

@@ -292,12 +292,10 @@ namespace Data
    }
    
    bool DataMgmt::GetLoadedFlights(QStringList& flights) const
-   {      
-      FlightColumnMap::const_iterator i = m_columns.begin();
-      for( ; i != m_columns.end(); ++i )
-      {
-         flights.push_back( i.key() );
-      }
+   {
+      m_mutex.lock();
+      flights = m_loadedFlights;
+      m_mutex.unlock();
 
       return true;
    }
@@ -338,6 +336,7 @@ namespace Data
          QSqlError err = q.lastError();
          std::cerr << "Error querying table " << qPrintable(sFlight) << std::endl;
          std::cerr << "   Error message: " << qPrintable( err.text() ) << std::endl;
+         return false;
       }
 
       // Extract the data from the database.
@@ -407,8 +406,8 @@ namespace Data
       }
 
       // Number of statistics calculated must match the number of attributes.
-      Q_ASSERT( data._params.size() > 0 && 
-         data._metadata.size() == data._params[0]._dataVector.size() );
+      //Q_ASSERT( (data._params.empty() && attributes.empty()) ||
+      //           data._metadata.size() == data._params[0]._dataVector.size() );
 
       return true;
    }
@@ -529,6 +528,7 @@ namespace Data
 
             if( buffer.bLastBuffer )
             {
+               m_loadedFlights.push_back(buffer.sFlightName);
                emit( FlightComplete(buffer.sFlightName) );
             }
          }

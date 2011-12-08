@@ -150,13 +150,14 @@ namespace Data
       void run();
 
 
-      QMutex          m_mutex;           //!< Mutex for thread safety
+      mutable QMutex  m_mutex;           //!< Mutex for thread safety
       FlightColumnMap m_columns;         //!< List of the data management by this object
       QSqlDatabase    m_db;              //!< Database being used by this class (move to pimpl)
       QString         m_sConnectionName; //!< Connection name for referencing the data
       Data::DataQueue m_queue;           //!< Queue containing parsed flight data
       bool            m_bStop;           //!< Flag indicating that parsing should stop
       int             m_nProcessed;      //!< Running count of the buffers processed.
+      QStringList     m_loadedFlights;   //!< List of flights that have completed loading
 
       EventDatabase   m_evtDb;           //!< Event data mapped to each flight.
 

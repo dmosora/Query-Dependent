@@ -100,6 +100,7 @@ private:
    // Real Time glyphs
    QList<RealTimeGlyph*>        _rtGlyphs;
    QList<Data::Buffer>   _buffers;
+   QStringList           _flights;
 
    Parser::CsvParser     m_csvParser; //!< Class to parse CSV files
    Data::DataMgmt        m_dataMgmt;  //!< Abstraction of the data management
